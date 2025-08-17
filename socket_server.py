@@ -1,10 +1,11 @@
+
 import socketio
-from config import ALLOWED_ORIGINS # config.py から許可オリジンリストをインポート
+
 
 # ① AsyncServer を ASGI モードで作成
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=ALLOWED_ORIGINS # "*" から設定ファイルの値に変更
+    cors_allowed_origins="*"
 )
 
 
