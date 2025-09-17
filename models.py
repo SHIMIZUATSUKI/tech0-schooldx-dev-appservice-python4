@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, DateTime, Text, Float, BigInteger
 from sqlalchemy.orm import declarative_base, relationship
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -22,6 +23,12 @@ class StudentTable(Base):
     account_name = Column(String(255))
     mail_address = Column(String(255), unique=True)
     password = Column(String(255))
+
+    # ユーザー管理用に追加
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
     class_table = relationship("ClassTableTable", back_populates="students")
     attendances = relationship("AttendanceTable", back_populates="student")
     view_data = relationship("ViewDataTable", back_populates="student")
