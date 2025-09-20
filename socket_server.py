@@ -1,11 +1,10 @@
-
 import socketio
+from config import ALLOWED_ORIGINS
 
-
-# ① AsyncServer を ASGI モードで作成
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins="*"
+    # 「*」（誰でもOK）から、設定ファイルで許可されたオリジンリストに変更します
+    cors_allowed_origins=ALLOWED_ORIGINS
 )
 
 
@@ -15,7 +14,7 @@ async def to_flutter(sid, data):
     # 発信元（Web）を除いた全クライアントに送信
     await sio.emit('from_web', data, skip_sid=sid)
 
-# Flutter → Web 用イベント（任意）
+# Flutter → Web 用イベント
 @sio.event
 async def to_web(sid, data):
     print(f"[to_web] from {sid}: {data}")
@@ -28,7 +27,6 @@ async def connect(sid, environ):
 @sio.event
 async def disconnect(sid):
     print(f"[disconnect] {sid}")
-
 
 # ASGI 統合用の関数を提供
 def sio_app(fastapi_app):

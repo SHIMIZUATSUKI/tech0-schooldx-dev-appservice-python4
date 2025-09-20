@@ -4,29 +4,24 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import (
     LessonTable, TimetableTable, LessonRegistrationTable,
-    LessonThemesTable, UnitTable, MaterialsTable, AttendanceTable
+    LessonThemesTable, UnitTable, MaterialTable, AttendanceTable,
+    ClassTable
 )
-from schemas import LessonCalendarResponse, LessonInformationResponse, AttendanceCreate, LessonThemeBlock  # 後述
-
+from schemas import LessonCalendarResponse, LessonInformationResponse, AttendanceCreate, LessonThemeBlock
 from typing import List
 import asyncio
+from sqlalchemy.exc import IntegrityError
 
 router = APIRouter(
     prefix="/lesson_attendance",
     tags=["lesson_attendance"]
 )
 
-from sqlalchemy.exc import IntegrityError
-
-
-
-
-
-
-
-#生徒のスマホアプリ。講義からカレンダーに入る
-@router.get("/calendar", response_model=List[LessonCalendarResponse])  # ✅ エンドポイント変更
+@router.get("/calendar", response_model=List[LessonCalendarResponse])
 def get_lesson_attendance_calendar(db: Session = Depends(get_db)):
+    """
+    生徒のスマホアプリ。講義からカレンダーに入る
+    """
     results = (
         db.query(
             TimetableTable.timetable_id,
@@ -37,23 +32,43 @@ def get_lesson_attendance_calendar(db: Session = Depends(get_db)):
             LessonTable.lesson_id,
             LessonTable.class_id,
             LessonTable.lesson_name,
-            LessonTable.delivery_status,
             LessonTable.lesson_status,
+            ClassTable.class_name, # class_name を取得
         )
         .join(LessonTable, TimetableTable.timetable_id == LessonTable.timetable_id)
+        .join(ClassTable, LessonTable.class_id == ClassTable.class_id) # ClassTableをJOIN
         .all()
     )
-    return results
+    
+    # delivery_statusは別途取得する必要がある場合は追加
+    response = []
+    for row in results:
+        response.append(LessonCalendarResponse(
+            timetable_id=row.timetable_id,
+            date=row.date,
+            day_of_week=row.day_of_week,
+            period=row.period,
+            time=row.time,
+            lesson_id=row.lesson_id,
+            class_id=row.class_id,
+            lesson_name=row.lesson_name,
+            class_name=row.class_name,
+            delivery_status=False,
+            lesson_status=bool(row.lesson_status == 2 or row.lesson_status == 3) if row.lesson_status else False
+        ))
+    
+    return response
 
-#生徒のスマホアプリ。カレンダーから授業受講できるようになる
 @router.get("/lesson_information", response_model=LessonInformationResponse)
 def get_lesson_information(lesson_id: int = Query(...), db: Session = Depends(get_db)):
+    """
+    生徒のスマホアプリ。カレンダーから授業受講できるようになる
+    """
     query_results = (
         db.query(
             LessonTable.class_id,
             LessonTable.timetable_id,
             LessonTable.lesson_name,
-            LessonTable.delivery_status,
             LessonTable.lesson_status,
             TimetableTable.date,
             TimetableTable.day_of_week,
@@ -61,50 +76,55 @@ def get_lesson_information(lesson_id: int = Query(...), db: Session = Depends(ge
             TimetableTable.time,
             LessonRegistrationTable.lesson_registration_id,
             LessonRegistrationTable.lesson_theme_id,
-            LessonThemesTable.lecture_video_id,
-            LessonThemesTable.textbook_id,
-            LessonThemesTable.document_id,
             LessonThemesTable.lesson_theme_name,
             UnitTable.units_id,
             UnitTable.part_name,
             UnitTable.chapter_name,
             UnitTable.unit_name,
-            MaterialsTable.material_id,
-            MaterialsTable.material_name
+            MaterialTable.material_id,
+            MaterialTable.material_name
         )
         .join(TimetableTable, LessonTable.timetable_id == TimetableTable.timetable_id)
         .join(LessonRegistrationTable, LessonTable.lesson_id == LessonRegistrationTable.lesson_id)
         .join(LessonThemesTable, LessonRegistrationTable.lesson_theme_id == LessonThemesTable.lesson_theme_id)
         .join(UnitTable, LessonThemesTable.units_id == UnitTable.units_id)
-        .join(MaterialsTable, UnitTable.material_id == MaterialsTable.material_id)
+        .join(MaterialTable, UnitTable.material_id == MaterialTable.material_id)
         .filter(LessonTable.lesson_id == lesson_id)
         .all()
     )
-
+    
     if not query_results:
         raise HTTPException(status_code=404, detail="Lesson not found")
-
+    
     common_fields = dict(zip([
-        "class_id", "timetable_id", "lesson_name",
-        "delivery_status", "lesson_status",
+        "class_id", "timetable_id", "lesson_name", "lesson_status",
         "date", "day_of_week", "period", "time"
-    ], query_results[0][0:9]))
-
-    lesson_theme_list = [
-        LessonThemeBlock(**dict(zip([
-            "lesson_registration_id", "lesson_theme_id",
-            "lecture_video_id", "textbook_id", "document_id", "lesson_theme_name",
-            "units_id", "part_name", "chapter_name", "unit_name",
-            "material_id", "material_name"
-        ], row[9:])))
-        for row in query_results
-    ]
-
+    ], [query_results[0][0], query_results[0][1], query_results[0][2],
+        bool(query_results[0][3] == 2 or query_results[0][3] == 3) if query_results[0][3] else False,
+        query_results[0][4], query_results[0][5], query_results[0][6], query_results[0][7]]))
+    
+    # delivery_statusは仮の値
+    common_fields["delivery_status"] = False
+    
+    lesson_theme_list = []
+    for row in query_results:
+        lesson_theme_list.append(LessonThemeBlock(
+            lesson_registration_id=row[8],
+            lesson_theme_id=row[9],
+            lecture_video_id=0,
+            textbook_id=0,
+            document_id=0,
+            lesson_theme_name=row[10],
+            units_id=row[11],
+            part_name=row[12],
+            chapter_name=row[13],
+            unit_name=row[14],
+            material_id=row[15],
+            material_name=row[16]
+        ))
+    
     return LessonInformationResponse(**common_fields, lesson_theme=lesson_theme_list)
 
-
-
-#先生の管理アプリと生徒のスマホアプリ。授業のステータスを変える
 # WebSocket管理
 active_connections: List[WebSocket] = []
 
@@ -123,160 +143,81 @@ async def broadcast_lesson_status_update(lesson_id: int):
     for conn in active_connections:
         await conn.send_json(message)
 
-
-
 @router.put("/lesson_information", response_model=LessonInformationResponse)
 def update_lesson_status_and_get_info(
     background_tasks: BackgroundTasks,
     lesson_id: int = Query(...),
     db: Session = Depends(get_db)
 ):
-    # ① 授業取得
+    # 授業取得
     lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
-
-    # ② ステータス更新
-    lesson.lesson_status = True
+    
+    # ステータス更新
+    lesson.lesson_status = 2  # ACTIVE
     db.commit()
     db.refresh(lesson)
+    
     background_tasks.add_task(broadcast_lesson_status_update, lesson_id)
-
-    # ③ 授業テーマ・登録情報取得（lesson_registration_id を含む）
+    
+    # 授業テーマ・登録情報取得
     themes = (
         db.query(
             LessonRegistrationTable.lesson_registration_id,
             LessonThemesTable.lesson_theme_id,
-            LessonThemesTable.lecture_video_id,
-            LessonThemesTable.textbook_id,
-            LessonThemesTable.document_id,
             LessonThemesTable.lesson_theme_name,
             LessonThemesTable.units_id,
             UnitTable.part_name,
             UnitTable.chapter_name,
             UnitTable.unit_name,
-            MaterialsTable.material_id,
-            MaterialsTable.material_name
+            MaterialTable.material_id,
+            MaterialTable.material_name
         )
         .join(LessonThemesTable, LessonRegistrationTable.lesson_theme_id == LessonThemesTable.lesson_theme_id)
         .join(UnitTable, LessonThemesTable.units_id == UnitTable.units_id)
-        .join(MaterialsTable, UnitTable.material_id == MaterialsTable.material_id)
+        .join(MaterialTable, UnitTable.material_id == MaterialTable.material_id)
         .filter(LessonRegistrationTable.lesson_id == lesson_id)
         .all()
     )
-
-    # ④ Pydanticモデルに変換
+    
+    # Pydanticモデルに変換
     lesson_theme_blocks = [
         LessonThemeBlock(
             lesson_registration_id=row[0],
             lesson_theme_id=row[1],
-            lecture_video_id=row[2],
-            textbook_id=row[3],
-            document_id=row[4],
-            lesson_theme_name=row[5],
-            units_id=row[6],
-            part_name=row[7],
-            chapter_name=row[8],
-            unit_name=row[9],
-            material_id=row[10],
-            material_name=row[11],
+            lecture_video_id=0,
+            textbook_id=0,
+            document_id=0,
+            lesson_theme_name=row[2],
+            units_id=row[3],
+            part_name=row[4],
+            chapter_name=row[5],
+            unit_name=row[6],
+            material_id=row[7],
+            material_name=row[8],
         )
         for row in themes
     ]
-
-    # ⑤ 時間割情報取得
+    
+    # 時間割情報取得
     timetable = db.query(TimetableTable).filter(TimetableTable.timetable_id == lesson.timetable_id).first()
     if not timetable:
         raise HTTPException(status_code=404, detail="Timetable not found")
-
-    # ⑥ 結果返却
+    
+    # 結果返却
     return LessonInformationResponse(
         class_id=lesson.class_id,
         timetable_id=lesson.timetable_id,
         lesson_name=lesson.lesson_name,
-        delivery_status=lesson.delivery_status,
-        lesson_status=lesson.lesson_status,
+        delivery_status=False,
+        lesson_status=bool(lesson.lesson_status == 2 or lesson.lesson_status == 3),
         date=timetable.date,
         day_of_week=timetable.day_of_week,
         period=timetable.period,
         time=timetable.time,
         lesson_theme=lesson_theme_blocks
     )
-
-
-# @router.put("/lesson_information", response_model=LessonInformationResponse)
-# def update_lesson_status_and_get_info(
-#     background_tasks: BackgroundTasks,
-#     lesson_id: int = Query(...),
-#     db: Session = Depends(get_db)
-# ):
-#     # 授業取得とステータス更新
-#     lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
-#     if not lesson:
-#         raise HTTPException(status_code=404, detail="Lesson not found")
-
-#     lesson.lesson_status = True
-#     db.commit()
-#     db.refresh(lesson)
-#     background_tasks.add_task(broadcast_lesson_status_update, lesson_id)
-
-#     # 授業テーマ情報の取得（修正済み）
-#     themes = (
-#         db.query(
-#             LessonRegistrationTable.lesson_registration_id,  # ✅ 追加
-
-#             LessonThemesTable.lesson_theme_id,
-#             LessonThemesTable.lecture_video_id,
-#             LessonThemesTable.textbook_id,
-#             LessonThemesTable.document_id,
-#             LessonThemesTable.lesson_theme_name,
-#             LessonThemesTable.units_id,
-#             UnitTable.part_name,
-#             UnitTable.chapter_name,
-#             UnitTable.unit_name,
-#             MaterialsTable.material_id,
-#             MaterialsTable.material_name,
-
-#         )
-#         .join(UnitTable, LessonThemesTable.units_id == UnitTable.units_id)
-#         .join(MaterialsTable, UnitTable.material_id == MaterialsTable.material_id)
-#         .join(LessonRegistrationTable, LessonThemesTable.lesson_theme_id == LessonRegistrationTable.lesson_theme_id)
-#         .filter(LessonRegistrationTable.lesson_id == lesson_id)
-#         .all()
-#     )
-
-#     lesson_theme_blocks = [
-#         LessonThemeBlock(
-#             lesson_theme_id=row[0],
-#             lecture_video_id=row[1],
-#             textbook_id=row[2],
-#             document_id=row[3],
-#             lesson_theme_name=row[4],
-#             units_id=row[5],
-#             part_name=row[6],
-#             chapter_name=row[7],
-#             unit_name=row[8],
-#             material_id=row[9],
-#             material_name=row[10],
-#         )
-#         for row in themes
-#     ]
-
-#     # 時間割情報の取得
-#     timetable = db.query(TimetableTable).filter(TimetableTable.timetable_id == lesson.timetable_id).first()
-
-#     return LessonInformationResponse(
-#         class_id=lesson.class_id,
-#         timetable_id=lesson.timetable_id,
-#         lesson_name=lesson.lesson_name,
-#         delivery_status=lesson.delivery_status,
-#         lesson_status=lesson.lesson_status,
-#         date=timetable.date,
-#         day_of_week=timetable.day_of_week,
-#         period=timetable.period,
-#         time=timetable.time,
-#         lesson_theme=lesson_theme_blocks
-#     )
 
 @router.put("/lesson_information/attendance")
 def update_attendance_status(
@@ -293,16 +234,16 @@ def update_attendance_status(
         )
         .first()
     )
-
+    
     if not record:
         raise HTTPException(status_code=404, detail="Attendance record not found")
-
+    
     # ステータス更新
     if record.attendance_status is False:
         record.attendance_status = True
         db.commit()
         db.refresh(record)
-
+    
     return {
         "attendance_id": record.attendance_id,
         "student_id": record.student_id,
