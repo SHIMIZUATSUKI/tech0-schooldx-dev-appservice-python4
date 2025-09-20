@@ -40,6 +40,9 @@ jobs:
         with:
           name: python-app
           path: release.zip
+          # ▼▼▼ 修正 ▼▼▼ アーティファクトの保持期間を7日に設定
+          retention-days: 7
+          # ▲▲▲ 修正 ▲▲▲
 
   deploy:
     runs-on: ubuntu-latest
