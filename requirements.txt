@@ -9,3 +9,6 @@ azure-storage-blob==12.14.1
 python-multipart==0.0.6
 websockets>=11.0  # WebSocket対応
 python-socketio== 5.8.0
+
+firebase_admin
+PyJWT==2.8.0

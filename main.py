@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware # CORS設定追加
 from database import engine
 from models import Base
-from routers import lecture_videos, content, lesson_registration, lesson_attendance, answers_get_all, realtime_answers_put, answer_data_bulk, realtime_answers_get  # ★ 追加: answer_data_bulk
+from routers import lecture_videos, content, lesson_registration, lesson_attendance, answers_get_all, realtime_answers_put, answer_data_bulk, realtime_answers_get,user_auth  # ★ 追加: answer_data_bulk
 from config import ALLOWED_ORIGINS  # 環境変数として追加
 from socket_server import sio_app  # ← 統合されたアプリをインポート
 # 初回のみテーブルを自動作成（本番はAlembic等推奨）
@@ -27,6 +27,7 @@ app.include_router(answers_get_all.router)
 app.include_router(realtime_answers_put.router)
 app.include_router(answer_data_bulk.router)  # ★ 追加: 新機能ルーター
 app.include_router(realtime_answers_get.router) # ✅ 追加
+app.include_router(user_auth.router) # ✅ 追加
 # Socket.IO を統合した ASGI アプリ
 FastAPI_app = sio_app(app)
 @app.get("/")
