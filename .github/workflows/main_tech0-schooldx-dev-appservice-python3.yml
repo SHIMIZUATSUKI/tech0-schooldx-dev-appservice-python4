@@ -40,6 +40,7 @@ jobs:
         with:
           name: python-app
           path: release.zip
+          retention-days: 7 # ▼▼▼【修正】7日後にアーティファクトを自動削除 ▼▼▼
 
   deploy:
     runs-on: ubuntu-latest
