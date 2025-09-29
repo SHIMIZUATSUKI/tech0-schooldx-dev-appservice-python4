@@ -62,4 +62,16 @@ def read_root():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     # uvicornの実行対象を、マウント済みのFastAPIアプリ 'app' に変更
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # ▼▼▼▼▼【修正箇所】▼▼▼▼▼
+    # Azure App Serviceのようなリバースプロキシ環境下で正しく動作させるため、
+    # proxy_headers=True と forwarded_allow_ips='*' を追加します。
+    # これにより、X-Forwarded-Protoヘッダー（https）が認識され、
+    # Mixed Contentの原因となるHTTPへのリダイレクトを防ぎます。
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        proxy_headers=True,
+        forwarded_allow_ips='*'
+    )
+    # ▲▲▲▲▲【修正箇所】▲▲▲▲▲
