@@ -12,3 +12,6 @@ python-socketio== 5.8.0
 
 firebase_admin
 PyJWT==2.8.0
+
+# email形式確認用のライブラリ
+pydantic[email]
