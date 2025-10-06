@@ -14,11 +14,12 @@ from routers import (
     lessons,  # lessonsルーターをインポート
     lesson_themes, # lesson_themesルーターをインポート
     user_auth
-
 )
+
 # 'sio_app' の代わりに新しいファクトリ関数 'create_sio_app' をインポート
 from socket_server import create_sio_app
 from config import ALLOWED_ORIGINS
+import socketio
 
 # FastAPIアプリケーション作成
 app = FastAPI()
@@ -26,8 +27,8 @@ app = FastAPI()
 # CORS設定 (これは主にHTTP APIリクエストに適用されます)
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=ALLOWED_ORIGINS,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    # allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
@@ -41,6 +42,8 @@ sio_asgi_app = create_sio_app(cors_origins=ALLOWED_ORIGINS)
 # これにより、/socket.io/ へのリクエストは sio_asgi_app が処理する
 app.mount('/socket.io', sio_asgi_app)
 # --------------------------------
+
+
 
 # ルーター登録
 app.include_router(lecture_videos.router)
@@ -69,6 +72,6 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=port,
-        proxy_headers=True,        # ← これが設定されているか確認
-        forwarded_allow_ips='*'    # ← これが設定されているか確認
+        # proxy_headers=True,        # ← これが設定されているか確認
+        # forwarded_allow_ips='*',   # ← これが設定されているか確認
     )

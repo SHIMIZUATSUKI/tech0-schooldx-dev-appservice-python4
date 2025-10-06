@@ -14,9 +14,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def read_test():
     return {"status": "ok"}
 
-
-
-
 # ======================
 # リクエストスキーマ
 # ======================

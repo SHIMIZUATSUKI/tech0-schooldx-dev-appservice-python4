@@ -8,6 +8,7 @@ def create_sio_app(cors_origins: list[str]):
     sio = socketio.AsyncServer(
         async_mode="asgi",
         cors_allowed_origins=cors_origins
+        # cors_allowed_origins="*"
     )
 
     # 既存のイベントハンドラを関数内に移動
