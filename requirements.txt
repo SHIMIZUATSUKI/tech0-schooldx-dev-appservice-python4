@@ -1,16 +1,16 @@
 ﻿fastapi==0.109.0
 uvicorn==0.27.0
 sqlalchemy==2.0.23
-pydantic==2.5.3
+# pydantic==2.5.3
 python-dotenv==1.0.0
 # gunicorn==20.1.0
 mysql-connector-python==8.0.33
 azure-storage-blob==12.14.1
 python-multipart==0.0.6
 websockets>=11.0  # WebSocket対応
-python-socketio== 5.8.0
+python-socketio==5.8.0
 
 firebase_admin
 
 # email形式確認用のライブラリ
-pydantic[email]
+pydantic[email]==2.5.3
