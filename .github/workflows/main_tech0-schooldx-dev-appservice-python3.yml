@@ -55,8 +55,8 @@ jobs:
         with:
           name: python-app
       
-      - name: Extract artifact
-        run: unzip release.zip
+      # - name: Extract artifact
+      #   run: unzip release.zip
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -65,3 +65,5 @@ jobs:
           app-name: 'tech0-schooldx-dev-appservice-python3'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_96DA3F513A99452582526000A7887851 }}
+          # ★ ZIP をそのまま渡す ★
+          package: release.zip
