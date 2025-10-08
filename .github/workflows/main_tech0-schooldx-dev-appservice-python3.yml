@@ -25,45 +25,22 @@ jobs:
         with:
           python-version: '3.12'
 
-      # - name: Install dependencies
-      #   run: |
-      #     python -m pip install --upgrade pip
-      #     pip install -r requirements.txt
-      
-      # 依存をサーバではなくCIで事前インストール
-      # Azure App Service(Linux)は .python_packages/lib/site-packages を自動で sys.path に追加します
-      - name: Install dependencies into .python_packages
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          mkdir -p .python_packages/lib/site-packages
-          pip install --no-deps -r requirements.txt -t .python_packages/lib/site-packages
-          # 依存の依存も必要なら --no-deps を外してください（まずはそのままでOK）      
+          pip install -r requirements.txt
+      
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
-      # 不要物を除外してZIP化（サイズ削減）
-      - name: Create deployment zip
-        run: |
-          zip -r app.zip . \
-            -x ".git/*" ".github/*" "venv/*" "__pycache__/*" "*.pyc" \
-               "tests/*" "docs/*"
+      - name: Archive project files
+        run: zip -r release.zip . -x "venv/*" "__pycache__/*" ".git/*" ".github/*"
 
-      - name: Upload artifact
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: app.zip
-          retention-days: 7
-
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-
-      # - name: Archive project files
-      #   run: zip -r release.zip . -x "venv/*" "__pycache__/*" ".git/*" ".github/*"
-
-      # - name: Upload artifact for deployment job
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: python-app
-      #     path: release.zip
-      #     retention-days: 7 # ▼▼▼【修正】7日後にアーティファクトを自動削除 ▼▼▼
+          path: release.zip
+          retention-days: 7 # ▼▼▼【修正】7日後にアーティファクトを自動削除 ▼▼▼
 
   deploy:
     runs-on: ubuntu-latest
@@ -78,8 +55,8 @@ jobs:
         with:
           name: python-app
       
-      # - name: Extract artifact
-      #   run: unzip release.zip
+      - name: Extract artifact
+        run: unzip release.zip
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -88,4 +65,3 @@ jobs:
           app-name: 'tech0-schooldx-dev-appservice-python3'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_96DA3F513A99452582526000A7887851 }}
-          package: app.zip
