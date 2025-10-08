@@ -46,17 +46,24 @@ jobs:
             -x ".git/*" ".github/*" "venv/*" "__pycache__/*" "*.pyc" \
                "tests/*" "docs/*"
 
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-
-      - name: Archive project files
-        run: zip -r release.zip . -x "venv/*" "__pycache__/*" ".git/*" ".github/*"
-
-      - name: Upload artifact for deployment job
+        name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: release.zip
-          retention-days: 7 # ▼▼▼【修正】7日後にアーティファクトを自動削除 ▼▼▼
+          path: app.zip
+          retention-days: 7
+
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+
+      # - name: Archive project files
+      #   run: zip -r release.zip . -x "venv/*" "__pycache__/*" ".git/*" ".github/*"
+
+      # - name: Upload artifact for deployment job
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: python-app
+      #     path: release.zip
+      #     retention-days: 7 # ▼▼▼【修正】7日後にアーティファクトを自動削除 ▼▼▼
 
   deploy:
     runs-on: ubuntu-latest
