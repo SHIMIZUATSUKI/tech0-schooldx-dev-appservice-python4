@@ -29,9 +29,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # mkdir -p .python_packages/lib/site-packages
-          # pip install -r requirements.txt -t .python_packages/lib/site-packages          
-      
+
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Archive project files
@@ -61,9 +59,9 @@ jobs:
         run: unzip release.zip
 
       - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v3      
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
         with:
           app-name: 'tech0-schooldx-dev-appservice-python3'
-          # slot-name: 'Production'
+          slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_96DA3F513A99452582526000A7887851 }}
