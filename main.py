@@ -19,7 +19,7 @@ from routers import (
 # 'sio_app' の代わりに新しいファクトリ関数 'create_sio_app' をインポート
 from socket_server import create_sio_app
 from config import ALLOWED_ORIGINS
-import socketio
+# import socketio
 
 # FastAPIアプリケーション作成
 app = FastAPI()
@@ -27,8 +27,8 @@ app = FastAPI()
 # CORS設定 (これは主にHTTP APIリクエストに適用されます)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    # allow_origins=["*"],
+    # allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,

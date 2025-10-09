@@ -65,7 +65,5 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'tech0-schooldx-dev-appservice-python3'
-          slot-name: 'Production'
+          # slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_96DA3F513A99452582526000A7887851 }}
-          # # ★ ZIP をそのまま渡す ★
-          # package: release.zip
