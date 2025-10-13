@@ -27,8 +27,8 @@ app = FastAPI()
 # CORS設定 (これは主にHTTP APIリクエストに適用されます)
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=ALLOWED_ORIGINS,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    # allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
