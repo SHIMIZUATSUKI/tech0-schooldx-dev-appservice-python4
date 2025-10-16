@@ -24,13 +24,13 @@ def create_sio_app(cors_origins: list[str]):
         print(f"[to_web] from {sid}: {data}")
         await sio.emit('from_flutter', data, skip_sid=sid)
 
-    # @sio.event
-    # async def connect(sid, environ):
-    #     print(f"[connect] {sid}")   
-
     @sio.event
-    async def connect(sid, environ, auth):
-        print("Origin =", environ.get("HTTP_ORIGIN"))        
+    async def connect(sid, environ):
+        print(f"[connect] {sid}")   
+
+    # @sio.event
+    # async def connect(sid, environ, auth):
+    #     print("Origin =", environ.get("HTTP_ORIGIN"))        
 
     @sio.event
     async def disconnect(sid):
