@@ -10,6 +10,8 @@ python-multipart==0.0.6
 websockets>=11.0  # WebSocket対応
 python-socketio==5.8.0
 
+six>=1.16.0
+
 # firebase-admin==6.9.0
 
 # email形式確認用のライブラリ
