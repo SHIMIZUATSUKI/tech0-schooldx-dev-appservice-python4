@@ -22,7 +22,12 @@ NEXT_URL = os.getenv("NEXT_URL")
 
 # CORS関連
 raw_origins = os.getenv("ALLOWED_ORIGINS")  # 例: "http://xxx.azurewebsites.net,http://localhost:3000"
+print(f"raw_origins: {raw_origins}")
+
 if raw_origins:
     ALLOWED_ORIGINS = [origin.strip() for origin in raw_origins.split(",")]
 else:
     ALLOWED_ORIGINS = []
+
+print(f"raw_origins: {raw_origins}")
+print(f"ALLOWED_ORIGINS: {ALLOWED_ORIGINS}")

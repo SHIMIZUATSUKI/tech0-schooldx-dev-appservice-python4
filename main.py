@@ -27,17 +27,18 @@ app = FastAPI()
 # CORS設定 (これは主にHTTP APIリクエストに適用されます)
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=ALLOWED_ORIGINS,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    # allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
-    # allow_credentials=True,
-    allow_credentials=False,    
+    allow_credentials=True,
+    # allow_credentials=False,    
 )
 
 # --- Socket.IOの結合方法を修正 ---
 # 1. ファクトリ関数を使って、設定ファイルから読み込んだオリジンを渡し、Socket.IOアプリを生成
 sio_asgi_app = create_sio_app(cors_origins=ALLOWED_ORIGINS)
+# sio_asgi_app = create_sio_app(cors_origins=["*"])
 
 # 2. FastAPIアプリの '/socket.io' パスにSocket.IOアプリをマウント
 # これにより、/socket.io/ へのリクエストは sio_asgi_app が処理する
