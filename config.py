@@ -27,3 +27,5 @@ if raw_origins:
     ALLOWED_ORIGINS = [origin.strip() for origin in raw_origins.split(",")]
 else:
     ALLOWED_ORIGINS = []
+
+print("Allowed Origins:", ALLOWED_ORIGINS)
