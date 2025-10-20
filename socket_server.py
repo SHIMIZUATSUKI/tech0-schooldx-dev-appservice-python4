@@ -6,17 +6,10 @@ def create_sio_app(cors_origins: list[str]):
     """
 
     # Socket.IOサーバーのインスタンスを生成し、引数で受け取ったオリジンリストを設定
-    # sio = socketio.AsyncServer(
-    #     async_mode="asgi",
-    #     # cors_allowed_origins=cors_origins + ["null"],
-    #     cors_allowed_origins="*",
-    # )
-
     sio = socketio.AsyncServer(
-    async_mode="asgi",
-    cors_allowed_origins="*",  # ← まずは通るか確認
-    logger=True, engineio_logger=True
-)
+        async_mode="asgi",
+        cors_allowed_origins=cors_origins
+    )
 
     # 既存のイベントハンドラを関数内に移動
     @sio.event
@@ -30,13 +23,13 @@ def create_sio_app(cors_origins: list[str]):
         print(f"[to_web] from {sid}: {data}")
         await sio.emit('from_flutter', data, skip_sid=sid)
 
+    # @sio.event
+    # async def connect(sid, environ):
+    #     print(f"[connect] {sid}")   
+
     @sio.event
     async def connect(sid, environ):
-        print(f"[connect] {sid}")   
-
-    # @sio.event
-    # async def connect(sid, environ, auth):
-    #     print("Origin =", environ.get("HTTP_ORIGIN"))        
+        print("HTTP_ORIGIN  =", environ.get("HTTP_ORIGIN"))        
 
     @sio.event
     async def disconnect(sid):
