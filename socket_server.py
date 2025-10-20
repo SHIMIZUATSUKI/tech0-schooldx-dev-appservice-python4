@@ -6,11 +6,17 @@ def create_sio_app(cors_origins: list[str]):
     """
 
     # Socket.IOサーバーのインスタンスを生成し、引数で受け取ったオリジンリストを設定
+    # sio = socketio.AsyncServer(
+    #     async_mode="asgi",
+    #     # cors_allowed_origins=cors_origins + ["null"],
+    #     cors_allowed_origins="*",
+    # )
+
     sio = socketio.AsyncServer(
-        async_mode="asgi",
-        # cors_allowed_origins=cors_origins + ["null"],
-        cors_allowed_origins="*",
-    )
+    async_mode="asgi",
+    cors_allowed_origins="*",  # ← まずは通るか確認
+    logger=True, engineio_logger=True
+)
 
     # 既存のイベントハンドラを関数内に移動
     @sio.event
