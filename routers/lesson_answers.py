@@ -29,6 +29,7 @@ def get_answer_data_for_dashboard(
             response.append(schemas.AnswerDataWithDetails(
                 student_id=ad.student_id,
                 lesson_id=ad.lesson_id,
+                choice_number=ad.choice_number,
                 answer_correctness=ad.answer_correctness,
                 answer_status=ad.answer_status,
                 answer_start_unix=ad.answer_start_unix,

@@ -258,6 +258,7 @@ class LessonAnswerDataWithDetails(BaseModel):
     student_id: int
     lesson_id: Optional[int] = None
     lesson_theme_id: Optional[int] = None
+    choice_number: Optional[int] = None
     answer_correctness: Optional[int] = None
     answer_status: Optional[int] = None
     answer_start_timestamp: Optional[datetime] = None
