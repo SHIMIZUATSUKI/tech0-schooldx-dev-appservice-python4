@@ -197,6 +197,7 @@ class StudentInfo(BaseModel):
     student_id: int
     name: str
     class_id: int
+    students_number: int
 
 class QuestionInfo(BaseModel):
     question_id: int
