@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from models import AnswerDataTable
+from models import LessonAnswerDataTable            # ここを修正
 from schemas import AnswerDataRealtimeResponse
 
 router = APIRouter(
@@ -17,10 +17,11 @@ def get_realtime_answers(
     question_id: int = Query(..., description="問題ID（必須）"),
     db: Session = Depends(get_db)
 ):
-    answer_data = db.query(AnswerDataTable).filter(
-        AnswerDataTable.lesson_theme_id == lesson_theme_id,
-        AnswerDataTable.student_id == student_id,
-        AnswerDataTable.question_id == question_id
+    # ここを修正
+    answer_data = db.query(LessonAnswerDataTable).filter(
+        LessonAnswerDataTable.lesson_theme_id == lesson_theme_id,
+        LessonAnswerDataTable.student_id == student_id,
+        LessonAnswerDataTable.question_id == question_id
     ).all()
 
     if not answer_data:

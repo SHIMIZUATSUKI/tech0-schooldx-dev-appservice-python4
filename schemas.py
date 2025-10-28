@@ -280,19 +280,19 @@ class LessonAnswerUpdateRequest(BaseModel):
 # -------------------------------
 # 既存のスキーマ（互換性のため）
 # -------------------------------
-class AnswerData(BaseModel):
-    answer_data_id: int
-    student_id: int
-    lesson_id: int
-    lesson_theme_id: int
-    question_id: int
-    answer: str
-    answer_correctness: int
-    answer_status: int
-    answer_start_timestamp: datetime
-    answer_start_unix: int
-    answer_end_timestamp: datetime
-    answer_end_unix: int
+# class AnswerData(BaseModel):
+#     answer_data_id: int
+#     student_id: int
+#     lesson_id: int
+#     lesson_theme_id: int
+#     question_id: int
+#     answer: str
+#     answer_correctness: int
+#     answer_status: int
+#     answer_start_timestamp: datetime
+#     answer_start_unix: int
+#     answer_end_timestamp: datetime
+#     answer_end_unix: int
 
 class AnswerDataWithDetails(BaseModel):
     student_id: int

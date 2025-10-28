@@ -191,63 +191,67 @@ class AttendanceTable(Base):
     student = relationship("StudentTable")
     lesson = relationship("LessonTable")
 
-class AnswerDataTable(Base):
-    __tablename__ = "answer_data_table"
-    
-    answer_data_id = Column(Integer, primary_key=True, autoincrement=True)
-    student_id = Column(Integer, ForeignKey("students_table.student_id"), nullable=False)
-    lesson_id = Column(Integer)
-    lesson_theme_id = Column(Integer)
-    question_id = Column(Integer)
-    answer = Column(String(255))
-    answer_correctness = Column(Boolean)
-    answer_status = Column(Integer)
-    answer_start_timestamp = Column(DateTime)
-    answer_start_unix = Column(BigInteger)
-    answer_end_timestamp = Column(DateTime)
-    answer_end_unix = Column(BigInteger)
 
-class QuestionTable(Base):
-    __tablename__ = "questions_table"
-    
-    question_id = Column(Integer, primary_key=True, autoincrement=True)
-    question_type = Column(String(50))
-    question_label = Column(String(255))
-    question_text = Column(Text)
-    question_image_url = Column(String(255))
-    
-    choices = relationship("ChoiceTable", back_populates="question")
-    answers = relationship("AnswerTable", back_populates="question")
 
-class ChoiceTable(Base):
-    __tablename__ = "choices_table"
-    
-    choice_id = Column(Integer, primary_key=True, autoincrement=True)
-    question_id = Column(Integer, ForeignKey("questions_table.question_id"), nullable=False)
-    choice_number = Column(Integer)
-    choice_text = Column(String(255))
-    answer_correctness = Column(Integer)
-    choice_image_url = Column(String(255))
-    
-    question = relationship("QuestionTable", back_populates="choices")
+# 以下、存在しないテーブルを一度コメントアウト 
 
-class AnswerTable(Base):
-    __tablename__ = "answers_table"
+# class AnswerDataTable(Base):
+#     __tablename__ = "answer_data_table"
     
-    answer_id = Column(Integer, primary_key=True, autoincrement=True)
-    question_id = Column(Integer, ForeignKey("questions_table.question_id"), nullable=False)
-    answer_name = Column(String(255))
-    answer_text = Column(Text)
-    answer_image_url = Column(String(255))
-    
-    question = relationship("QuestionTable", back_populates="answers")
+#     answer_data_id = Column(Integer, primary_key=True, autoincrement=True)
+#     student_id = Column(Integer, ForeignKey("students_table.student_id"), nullable=False)
+#     lesson_id = Column(Integer)
+#     lesson_theme_id = Column(Integer)
+#     question_id = Column(Integer)
+#     answer = Column(String(255))
+#     answer_correctness = Column(Boolean)
+#     answer_status = Column(Integer)
+#     answer_start_timestamp = Column(DateTime)
+#     answer_start_unix = Column(BigInteger)
+#     answer_end_timestamp = Column(DateTime)
+#     answer_end_unix = Column(BigInteger)
 
-class ExerciseTable(Base):
-    __tablename__ = "exercises_table"
+# class QuestionTable(Base):
+#     __tablename__ = "questions_table"
     
-    exercise_id = Column(Integer, primary_key=True, autoincrement=True)
-    lesson_id = Column(Integer)
-    lesson_theme_id = Column(Integer)
-    exercise_flag = Column(Boolean)
-    exercise_time = Column(Integer)
-    exercise_status = Column(String(10))
+#     question_id = Column(Integer, primary_key=True, autoincrement=True)
+#     question_type = Column(String(50))
+#     question_label = Column(String(255))
+#     question_text = Column(Text)
+#     question_image_url = Column(String(255))
+    
+#     choices = relationship("ChoiceTable", back_populates="question")
+#     answers = relationship("AnswerTable", back_populates="question")
+
+# class ChoiceTable(Base):
+#     __tablename__ = "choices_table"
+    
+#     choice_id = Column(Integer, primary_key=True, autoincrement=True)
+#     question_id = Column(Integer, ForeignKey("questions_table.question_id"), nullable=False)
+#     choice_number = Column(Integer)
+#     choice_text = Column(String(255))
+#     answer_correctness = Column(Integer)
+#     choice_image_url = Column(String(255))
+    
+#     question = relationship("QuestionTable", back_populates="choices")
+
+# class AnswerTable(Base):
+#     __tablename__ = "answers_table"
+    
+#     answer_id = Column(Integer, primary_key=True, autoincrement=True)
+#     question_id = Column(Integer, ForeignKey("questions_table.question_id"), nullable=False)
+#     answer_name = Column(String(255))
+#     answer_text = Column(Text)
+#     answer_image_url = Column(String(255))
+    
+#     question = relationship("QuestionTable", back_populates="answers")
+
+# class ExerciseTable(Base):
+#     __tablename__ = "exercises_table"
+    
+#     exercise_id = Column(Integer, primary_key=True, autoincrement=True)
+#     lesson_id = Column(Integer)
+#     lesson_theme_id = Column(Integer)
+#     exercise_flag = Column(Boolean)
+#     exercise_time = Column(Integer)
+#     exercise_status = Column(String(10))
