@@ -37,8 +37,8 @@ app.add_middleware(
 
 # --- Socket.IOの結合方法を修正 ---
 # 1. ファクトリ関数を使って、設定ファイルから読み込んだオリジンを渡し、Socket.IOアプリを生成
-sio_asgi_app = create_sio_app(cors_origins=ALLOWED_ORIGINS)
-# sio_asgi_app = create_sio_app(cors_origins=["*"])
+sio_asgi_app = create_sio_app(cors_origins=ALLOWED_ORIGINS) # ← ★★★ この行を有効化 ★★★
+# sio_asgi_app = create_sio_app(cors_origins=["*"]) # ← ★★★ この行をコメントアウト ★★★
 
 # 2. FastAPIアプリの '/socket.io' パスにSocket.IOアプリをマウント
 # これにより、/socket.io/ へのリクエストは sio_asgi_app が処理する

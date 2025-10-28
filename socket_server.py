@@ -5,17 +5,20 @@ def create_sio_app(cors_origins: list[str]):
     CORS設定を受け取り、設定済みのSocket.IO ASGIアプリケーションを生成する関数。
     """
 
-    # # Socket.IOサーバーのインスタンスを生成し、引数で受け取ったオリジンリストを設定
-    # sio = socketio.AsyncServer(
-    #     async_mode="asgi",
-    #     cors_allowed_origins=cors_origins
-    # )
-
+    # Socket.IOサーバーのインスタンスを生成し、引数で受け取ったオリジンリストを設定
     sio = socketio.AsyncServer(
         async_mode="asgi",
-        cors_allowed_origins="*",  # ← まずは通るか確認
-        logger=True, engineio_logger=True
+        cors_allowed_origins=cors_origins, # ← ★★★ .env の値（引数）が使われるように修正 ★★★
+        logger=True, 
+        engineio_logger=True
     )
+
+    # --- ▼▼▼ 以下のハードコードされた行を削除（またはコメントアウト） ▼▼▼ ---
+    # sio = socketio.AsyncServer(
+    #     async_mode="asgi",
+    #     cors_allowed_origins="*",  # ← この行が問題だった
+    #     logger=True, engineio_logger=True
+    # )
 
     # 既存のイベントハンドラを関数内に移動
     @sio.event

@@ -61,7 +61,8 @@ def get_grades_raw_data(
             student=StudentInfo(
                 student_id=student.student_id,
                 name=student.name,
-                class_id=student.class_id
+                class_id=student.class_id,
+                students_number=student.students_number
             ),
             question=QuestionInfo(
                 question_id=question.lesson_question_id,
