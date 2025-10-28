@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from database import get_db
-from models import AnswerDataTable
+from models import LessonAnswerDataTable
 from schemas import AnswerUpdateRequest, AnswerData
 from datetime import datetime
 
@@ -9,13 +9,13 @@ router = APIRouter(prefix="/api/answers", tags=["answer_data"])
 
 @router.put("/", response_model=AnswerData)
 def update_answer_data_by_id(
-    answer_data_id: int = Query(..., description="更新対象の answer_data_id"),
+    lesson_answer_data_id: int = Query(..., description="更新対象の answer_data_id"),
     update: AnswerUpdateRequest = Body(...),
     db: Session = Depends(get_db)
 ):
     # レコード取得
-    record = db.query(AnswerDataTable).filter(
-        AnswerDataTable.answer_data_id == answer_data_id
+    record = db.query(LessonAnswerDataTable).filter(
+        LessonAnswerDataTable.lesson_answer_data_id == lesson_answer_data_id
     ).first()
 
     if not record:
@@ -47,12 +47,12 @@ def update_answer_data_by_id(
     db.refresh(record)
 
     return AnswerData(
-        answer_data_id=record.answer_data_id,
+        answer_data_id=record.lesson_answer_data_id,
         student_id=record.student_id,
         lesson_id=record.lesson_id or 0,
         lesson_theme_id=record.lesson_theme_id or 0,
-        question_id=record.question_id,
-        answer=record.answer or "",
+        question_id=record.lesson_question_id,
+        choice_number=record.choice_number or 0,
         answer_correctness=int(record.answer_correctness) if record.answer_correctness is not None else 0,
         answer_status=record.answer_status or 0,
         answer_start_timestamp=record.answer_start_timestamp or datetime.now(),
