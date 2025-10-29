@@ -16,8 +16,8 @@ from routers import (
     user_auth
 )
 
-# 'sio_app' の代わりに新しいファクトリ関数 'create_sio_app' をインポート
-from socket_server import create_sio_app
+# ★ 修正: sio_app と create_sio_app をインポート
+from socket_server import sio_app, create_sio_app
 from config import ALLOWED_ORIGINS
 # import socketio
 
@@ -36,13 +36,12 @@ app.add_middleware(
 )
 
 # --- Socket.IOの結合方法を修正 ---
-# 1. ファクトリ関数を使って、設定ファイルから読み込んだオリジンを渡し、Socket.IOアプリを生成
-sio_asgi_app = create_sio_app(cors_origins=ALLOWED_ORIGINS) # ← ★★★ この行を有効化 ★★★
-# sio_asgi_app = create_sio_app(cors_origins=["*"]) # ← ★★★ この行をコメントアウト ★★★
+# 1. ファクトリ関数を呼び出してCORSとイベントハンドラを設定
+create_sio_app(cors_origins=ALLOWED_ORIGINS) 
 
 # 2. FastAPIアプリの '/socket.io' パスにSocket.IOアプリをマウント
-# これにより、/socket.io/ へのリクエストは sio_asgi_app が処理する
-app.mount('/socket.io', sio_asgi_app)
+# これにより、/socket.io/ へのリクエストは sio_app が処理する
+app.mount('/socket.io', sio_app) # ★ sio_asgi_app から sio_app に変更
 # --------------------------------
 
 
