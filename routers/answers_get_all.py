@@ -41,7 +41,10 @@ def get_answer_data_with_details(
     result = []
     for row in records:
         question = row.lesson_question
-        
+
+        if not question:
+                continue
+
         # 問題詳細の構築
         question_detail = LessonQuestionResponse(
             lesson_question_id=question.lesson_question_id,
