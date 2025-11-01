@@ -29,12 +29,9 @@ def create_lesson_survey(
     - student_id (int, 必須): 学生ID
     - lesson_id (Optional[int]): 授業ID
     - lesson_theme_id (Optional[int]): 授業テーマID
-    - understanding_level (Optional[int]): 理解度レベル（1-5 など）
-    - difficulty_point (Optional[int]): 難易度ポイント（1-5 など）
-    - student_comment (Optional[str]): 学生のコメント
-
-    使用例:
-    POST /lesson_surveys/?student_id=1&lesson_theme_id=5&understanding_level=4&difficulty_point=2&student_comment=大変良く理解できた
+    - understanding_level (Optional[int]): 理解度レベル（1-）
+    - difficulty_point (Optional[int]): 難易度ポイント（1-5）
+    - student_comment (Optional[str]): コメント
     """
     try:
         # 学生の存在確認
@@ -113,8 +110,8 @@ def get_lesson_surveys(
     学生のアンケート履歴を取得するエンドポイント
 
     クエリパラメータ:
-    - student_id (Optional[int]): 学生IDでフィルター
-    - lesson_theme_id (Optional[int]): 授業テーマIDでフィルター
+    - student_id (Optional[int]): 学生ID
+    - lesson_theme_id (Optional[int]): 授業テーマID
     """
     try:
         query = db.query(LessonSurveyTable)
@@ -128,38 +125,6 @@ def get_lesson_surveys(
         surveys = query.all()
         return [LessonSurveyResponse.from_orm(survey) for survey in surveys]
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"内部エラーが発生しました: {str(e)}"
-        )
-
-@router.get("/{survey_id}", response_model=LessonSurveyResponse)
-def get_lesson_survey_by_id(
-    survey_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    特定のアンケートレコードを取得するエンドポイント
-
-    パスパラメータ:
-    - survey_id (int): アンケートID
-    """
-    try:
-        survey = db.query(LessonSurveyTable).filter(
-            LessonSurveyTable.lesson_survey_id == survey_id
-        ).first()
-
-        if not survey:
-            raise HTTPException(
-                status_code=404,
-                detail=f"アンケートID {survey_id} が見つかりません"
-            )
-
-        return LessonSurveyResponse.from_orm(survey)
-
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -181,9 +146,9 @@ def update_lesson_survey(
     - survey_id (int): 更新対象のアンケートID
 
     クエリパラメータ:
-    - understanding_level (Optional[int]): 理解度レベル（1-5 など）
-    - difficulty_point (Optional[int]): 難易度ポイント（1-5 など）
-    - student_comment (Optional[str]): 学生のコメント
+    - understanding_level (Optional[int]): 理解度レベル（1-5）
+    - difficulty_point (Optional[int]): 難易度ポイント（1-5）
+    - student_comment (Optional[str]): コメント
     """
     try:
         survey = db.query(LessonSurveyTable).filter(
@@ -210,40 +175,6 @@ def update_lesson_survey(
         db.refresh(survey)
 
         return LessonSurveyResponse.from_orm(survey)
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"内部エラーが発生しました: {str(e)}"
-        )
-
-@router.delete("/{survey_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_lesson_survey(
-    survey_id: int,
-    db: Session = Depends(get_db)
-):
-    """
-    アンケートレコードを削除するエンドポイント
-
-    パスパラメータ:
-    - survey_id (int): 削除対象のアンケートID
-    """
-    try:
-        survey = db.query(LessonSurveyTable).filter(
-            LessonSurveyTable.lesson_survey_id == survey_id
-        ).first()
-
-        if not survey:
-            raise HTTPException(
-                status_code=404,
-                detail=f"アンケートID {survey_id} が見つかりません"
-            )
-
-        db.delete(survey)
-        db.commit()
 
     except HTTPException:
         raise
