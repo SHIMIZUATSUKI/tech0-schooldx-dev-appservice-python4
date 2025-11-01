@@ -13,7 +13,8 @@ from routers import (
     grade_summary,
     lessons,  # lessonsルーターをインポート
     lesson_themes, # lesson_themesルーターをインポート
-    user_auth
+    user_auth,
+    lesson_surveys, # lesson_surveysルーターをインポート
 )
 
 # ★ 修正: sio_app と create_sio_app をインポート
@@ -60,6 +61,7 @@ app.include_router(grades.router)
 app.include_router(grade_summary.router)
 app.include_router(lessons.router) # lessonsルーターを追加
 app.include_router(lesson_themes.router) # lesson_themesルーターを追加
+app.include_router(lesson_surveys.router) # lesson_surveysルーターを追加
 app.include_router(user_auth.router)
 
 # ルートエンドポイント

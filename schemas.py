@@ -379,3 +379,26 @@ class LessonThemeDetail(BaseModel):
     lesson_theme_id: int
     exercise_flag: bool
     exercise_status: str
+# -------------------------------
+# 授業アンケート（LessonSurvey）
+# -------------------------------
+class LessonSurveyCreate(BaseModel):
+    student_id: int
+    lesson_id: Optional[int] = None
+    lesson_theme_id: Optional[int] = None
+    understanding_level: Optional[int] = None
+    difficulty_point: Optional[int] = None
+    student_comment: Optional[str] = None
+
+class LessonSurveyResponse(BaseModel):
+    lesson_survey_id: int
+    student_id: int
+    lesson_id: Optional[int] = None
+    lesson_theme_id: Optional[int] = None
+    survey_status: int
+    understanding_level: Optional[int] = None
+    difficulty_point: Optional[int] = None
+    student_comment: Optional[str] = None
+
+    class Config:
+        from_attributes = True
