@@ -14,12 +14,7 @@ router = APIRouter(
 
 @router.post("/", response_model=LessonSurveyResponse, status_code=status.HTTP_201_CREATED)
 def create_lesson_survey(
-    student_id: int = Query(...),
-    lesson_id: Optional[int] = Query(None),
-    lesson_theme_id: Optional[int] = Query(None),
-    understanding_level: Optional[int] = Query(None),
-    difficulty_point: Optional[int] = Query(None),
-    student_comment: Optional[str] = Query(None),
+    survey:LessonSurveyCreate,
     db: Session = Depends(get_db)
 ):
     """
@@ -33,6 +28,14 @@ def create_lesson_survey(
     - difficulty_point (Optional[int]): 難易度ポイント（1-5）
     - student_comment (Optional[str]): コメント
     """
+    # Body から値取得
+    student_id          = survey.student_id
+    lesson_id           = survey.lesson_id
+    lesson_theme_id     = survey.lesson_theme_id
+    understanding_level = survey.understanding_level
+    difficulty_point    = survey.difficulty_point
+    student_comment     = survey.student_comment
+
     try:
         # 学生の存在確認
         student = db.query(StudentTable).filter(
