@@ -38,5 +38,5 @@ def allow_login(
         "user_id": student.student_id,
         # "email": student.email,
         "class_id": student.class_id,
-        # "class_name": student.class_name
+        "class_name": student.class_ref.class_name
     }
