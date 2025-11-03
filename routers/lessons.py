@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, row_number  # ◀ 必要なモジュールを追加
+from sqlalchemy import func  # ◀ row_numberの直接インポートを削除
 from database import get_db
 from models import (
     LessonTable, 
@@ -90,8 +90,10 @@ async def start_lesson(
 
     if not themes_to_create_ids:
         db.commit() # ステータス更新を反映
+        # 既に全データが作成済みの場合
+        existing_total_count = sum(count for _, count in existing_data_counts)
         return LessonStatusResponse(
-            message=f"Lesson started successfully. All answer records already exist."
+            message=f"Lesson started successfully. All {existing_total_count} answer records already exist."
         )
 
     # 7. [改善] 対象テーマの問題を「1テーマ4問まで」で一括取得 (クエリ x 1)
