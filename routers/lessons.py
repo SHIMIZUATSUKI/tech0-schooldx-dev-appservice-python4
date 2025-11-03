@@ -1,10 +1,12 @@
+# ファイルパス: routers\lessons.py
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func  # ◀ row_numberの直接インポートを削除
+from sqlalchemy import func # ◀ funcは引き続き利用
 from database import get_db
 from models import (
-    LessonTable, 
-    LessonAnswerDataTable, 
+    LessonTable,
+    LessonAnswerDataTable,
     LessonRegistrationTable,
     StudentTable,
     LessonQuestionsTable,
@@ -33,25 +35,24 @@ async def start_lesson(
     lesson = db.query(LessonTable).filter_by(lesson_id=lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    
+
     # 2. ステータスを進行中(2)に更新
     # (コミットは最後に行う)
     lesson.lesson_status = 2
-    
+
     # 3. この授業に紐づく全テーマIDを取得 (クエリ x 1)
     theme_id_tuples = (
         db.query(LessonRegistrationTable.lesson_theme_id)
         .filter(LessonRegistrationTable.lesson_id == lesson_id)
         .all()
     )
-    
     if not theme_id_tuples:
         # 授業にテーマが登録されていない場合は、ステータス更新だけコミットして終了
         db.commit()
         return LessonStatusResponse(
             message=f"Lesson started successfully. No themes registered, 0 records created."
         )
-        
+    
     lesson_theme_ids = [theme_id for (theme_id,) in theme_id_tuples]
 
     # 4. [改善] 既存データを「テーマIDごと」に一括で取得 (クエリ x 1)
@@ -68,6 +69,7 @@ async def start_lesson(
         .group_by(LessonAnswerDataTable.lesson_theme_id)
         .all()
     )
+    
     # 既にデータが存在するテーマIDのセット
     existing_theme_ids = {theme_id for theme_id, count in existing_data_counts if count > 0}
 
@@ -81,7 +83,7 @@ async def start_lesson(
     if not students:
         db.commit() # ステータス更新を反映
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail="No students found in this class"
         )
 
@@ -96,51 +98,33 @@ async def start_lesson(
             message=f"Lesson started successfully. All {existing_total_count} answer records already exist."
         )
 
-    # 7. [改善] 対象テーマの問題を「1テーマ4問まで」で一括取得 (クエリ x 1)
-    # (N+1クエリ解消 + limit(4)のバグ修正)
+    # ▼▼▼▼▼ 【修正箇所】 ▼▼▼▼▼
+    # 7. [改善] ウィンドウ関数をやめ、テーマIDごとにループして単純なクエリ(limit 4)を実行
+    #    ステップ7と8（問題取得とマップ作成）を統合し、直接INSERT用リストを作成
     
-    # サブクエリで各テーマ内の問題に番号を振る
-    # (LessonQuestionsTable.lesson_question_id の昇順で4件取得)
-    subquery = (
-        db.query(
-            LessonQuestionsTable.lesson_question_id,
-            LessonThemesTable.lesson_theme_id,
-            func.row_number().over(
-                partition_by=LessonThemesTable.lesson_theme_id,
-                order_by=LessonQuestionsTable.lesson_question_id.asc()
-            ).label("rn")
-        )
-        .join(LessonThemeContentsTable, LessonQuestionsTable.lesson_theme_contents_id == LessonThemeContentsTable.lesson_theme_contents_id)
-        .join(LessonThemesTable, LessonThemeContentsTable.lesson_theme_contents_id == LessonThemesTable.lesson_theme_contents_id)
-        .filter(LessonThemesTable.lesson_theme_id.in_(themes_to_create_ids))
-        .subquery()
-    )
-    
-    # 番号が4以下の問題IDとテーマIDを取得
-    questions_query = (
-        db.query(
-            subquery.c.lesson_theme_id,
-            subquery.c.lesson_question_id
-        )
-        .filter(subquery.c.rn <= 4)
-        .all()
-    )
-    
-    # Python側で {theme_id: [question_id, ...]} のマップを作成
-    theme_to_questions_map = {}
-    for theme_id, question_id in questions_query:
-        if theme_id not in theme_to_questions_map:
-            theme_to_questions_map[theme_id] = []
-        theme_to_questions_map[theme_id].append(question_id)
-
-    # 8. [改善] 一括INSERT用のリストを作成
     new_records_to_add = []
     
-    # Pythonループ (DBアクセスなし)
-    for student in students:
-        for theme_id in themes_to_create_ids:
-            questions_ids = theme_to_questions_map.get(theme_id, [])
-            for question_id in questions_ids:
+    # Pythonループ (DBアクセスはループ内 x 1回)
+    for theme_id in themes_to_create_ids:
+        
+        # 7-1. (ループ内) テーマIDに紐づく問題IDを最大4件取得 (クエリ x Nテーマ)
+        #      (JOIN + filter + order_by + limit)
+        question_ids_tuples = (
+            db.query(LessonQuestionsTable.lesson_question_id)
+            .join(LessonThemeContentsTable, LessonQuestionsTable.lesson_theme_contents_id == LessonThemeContentsTable.lesson_theme_contents_id)
+            .join(LessonThemesTable, LessonThemeContentsTable.lesson_theme_contents_id == LessonThemesTable.lesson_theme_contents_id)
+            .filter(LessonThemesTable.lesson_theme_id == theme_id)
+            .order_by(LessonQuestionsTable.lesson_question_id.asc())
+            .limit(4)
+            .all()
+        )
+        
+        question_ids = [q_id for (q_id,) in question_ids_tuples]
+
+        # 8. [改善] 取得した問題IDを使って、生徒分のレコードをリストに追加
+        # Pythonループ (DBアクセスなし)
+        for student in students:
+            for question_id in question_ids:
                 new_data = LessonAnswerDataTable(
                     student_id=student.student_id,
                     lesson_id=lesson_id,
@@ -157,19 +141,22 @@ async def start_lesson(
                 new_records_to_add.append(new_data)
     
     created_count = len(new_records_to_add)
+    
+    # ▲▲▲▲▲ 【修正箇所】 ▲▲▲▲▲
 
     # 9. [改善] 一括INSERT (Bulk Insert)
     if new_records_to_add:
         db.add_all(new_records_to_add)
-    
+
     # 10. コミット (COMMIT x 1)
     # (ステータス更新とINSERTが一括でコミットされる)
     db.commit()
-    
+
     return LessonStatusResponse(
         message=f"Lesson started successfully. Created {created_count} answer records."
     )
 
+# （end_lesson 関数は変更ありません）
 @router.put("/{lesson_id}/end", response_model=LessonStatusResponse)
 async def end_lesson(
     lesson_id: int,
@@ -183,9 +170,8 @@ async def end_lesson(
     lesson = db.query(LessonTable).filter_by(lesson_id=lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
-    
+
     # ステータスを終了(3)に更新
     lesson.lesson_status = 3
     db.commit()
-    
     return LessonStatusResponse(message="Lesson ended successfully")
