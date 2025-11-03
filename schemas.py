@@ -197,7 +197,9 @@ class StudentInfo(BaseModel):
     student_id: int
     name: str
     class_id: int
+    # ▼▼▼▼▼ 【修正】エラーログに基づき、不足していた students_number を追加 ▼▼▼▼▼
     students_number: int
+    # ▲▲▲▲▲ 【修正】 ▲▲▲▲▲
 
 class QuestionInfo(BaseModel):
     question_id: int
@@ -259,7 +261,9 @@ class LessonAnswerDataWithDetails(BaseModel):
     student_id: int
     lesson_id: Optional[int] = None
     lesson_theme_id: Optional[int] = None
+    # ▼▼▼▼▼ 【修正】欠落していた choice_number を復元 ▼▼▼▼▼
     choice_number: Optional[int] = None
+    # ▲▲▲▲▲ 【修正】 ▲▲▲▲▲
     answer_correctness: Optional[int] = None
     answer_status: Optional[int] = None
     answer_start_timestamp: Optional[datetime] = None
@@ -379,6 +383,8 @@ class LessonThemeDetail(BaseModel):
     lesson_theme_id: int
     exercise_flag: bool
     exercise_status: str
+
+# ▼▼▼▼▼ 【修正】欠落していたクラス定義を復元 ▼▼▼▼▼
 # -------------------------------
 # 授業アンケート（LessonSurvey）
 # -------------------------------
@@ -402,3 +408,4 @@ class LessonSurveyResponse(BaseModel):
 
     class Config:
         from_attributes = True
+# ▲▲▲▲▲ 【修正】 ▲▲▲▲▲

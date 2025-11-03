@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import List
+import traceback # エラー詳細出力のためインポート
 from database import get_db
 from models import (
     LessonAnswerDataTable, LessonQuestionsTable, StudentTable, LessonTable,
@@ -17,26 +18,19 @@ def get_grades_raw_data(
     lesson_id: int = Query(..., description="授業ID（必須）"),
     db: Session = Depends(get_db)
 ):
-    lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Lesson not found")
-
+    
     try:
+        lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
+        if not lesson:
+            raise HTTPException(status_code=404, detail="Lesson not found")
+
         answer_data_list = (
             db.query(LessonAnswerDataTable)
-            # 1. 生徒情報をJOIN
             .join(StudentTable, LessonAnswerDataTable.student_id == StudentTable.student_id)
-            
-            # 2. 問題情報をJOIN
             .join(LessonQuestionsTable, LessonAnswerDataTable.lesson_question_id == LessonQuestionsTable.lesson_question_id)
-            
-            # 3. テーマ情報 -> ユニット情報をJOIN (LAD.lesson_theme_id を使用)
             .join(LessonThemesTable, LessonAnswerDataTable.lesson_theme_id == LessonThemesTable.lesson_theme_id, isouter=True)
             .join(UnitTable, LessonThemesTable.units_id == UnitTable.units_id, isouter=True)
-            
             .filter(LessonAnswerDataTable.lesson_id == lesson_id)
-            
-            # Eager Loading
             .options(
                 joinedload(LessonAnswerDataTable.student),
                 joinedload(LessonAnswerDataTable.lesson_question),
@@ -44,18 +38,14 @@ def get_grades_raw_data(
             )
             .all()
         )
-    
-    except Exception as e:
-        # DBクエリ自体が失敗した場合（デバッグ用）
-        print(f"!!! /grades/raw_data DBクエリ エラー: {e}")
-        raise HTTPException(status_code=500, detail=f"Database query failed: {e}")
 
-    if not answer_data_list:
-        return []
+        if not answer_data_list:
+            return []
 
-    result = []
-    try:
-        for ad in answer_data_list:
+        result = []
+        
+        for i, ad in enumerate(answer_data_list):
+            
             student = ad.student
             question = ad.lesson_question
             theme = ad.lesson_theme
@@ -75,16 +65,17 @@ def get_grades_raw_data(
                 is_correct_val = ad.answer_correctness
             elif selected_choice is not None and correct_choice is not None:
                 is_correct_val = (selected_choice == correct_choice)
-
-            # ▼▼▼▼▼ 【500エラー対策】 student.name が None の場合に対応 ▼▼▼▼▼
+            
             student_name = student.name or "名前なし" 
-            # ▲▲▲▲▲ 【500エラー対策】 ▲▲▲▲▲
 
             result.append(GradesRawDataItem(
                 student=StudentInfo(
                     student_id=student.student_id,
-                    name=student_name, # 修正
-                    class_id=student.class_id
+                    name=student_name,
+                    class_id=student.class_id,
+                    # ▼▼▼▼▼ 【修正】エラーログに基づき、不足していた students_number を追加 ▼▼▼▼▼
+                    students_number=student.students_number
+                    # ▲▲▲▲▲ 【修正】 ▲▲▲▲▲
                 ),
                 question=QuestionInfo(
                     question_id=question.lesson_question_id,
@@ -102,15 +93,14 @@ def get_grades_raw_data(
                     end_unix=ad.answer_end_unix
                 )
             ))
-            
+        
+        return result
+
     except Exception as e:
-        # ループ内でのデータ変換エラー（デバッグ用）
-        print(f"!!! /grades/raw_data データ処理ループ エラー: {e}")
-        import traceback
+        print(f"!!! /grades/raw_data エラー発生 !!!: {e}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Data processing error: {e}")
-    
-    return result
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
+
 
 @router.get("/comments", response_model=GradesCommentsResponse)
 def get_grades_comments(
@@ -121,62 +111,63 @@ def get_grades_comments(
     指定した授業の全生徒のアンケートコメントを取得する。
     定性分析に使用する。
     """
-    lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Lesson not found")
+    
+    try:
+        lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
+        if not lesson:
+            raise HTTPException(status_code=404, detail="Lesson not found")
 
-    # ▼▼▼▼▼ 【Comments絞り込み修正】 ▼▼▼▼▼
-    
-    # 1. この授業のクラスID (target_class_id) を取得
-    target_class_id = lesson.class_id
-    
-    # 2. そのクラスに所属する生徒のID一覧 (Set) を取得
-    student_ids_in_class = db.query(StudentTable.student_id).filter(
-        StudentTable.class_id == target_class_id
-    ).all()
-    
-    target_student_id_set = {s_id for (s_id,) in student_ids_in_class}
+        # 1. この授業のクラスID (target_class_id) を取得
+        target_class_id = lesson.class_id
+        
+        # 2. そのクラスに所属する生徒のID一覧 (Set) を取得
+        student_ids_in_class = db.query(StudentTable.student_id).filter(
+            StudentTable.class_id == target_class_id
+        ).all()
+        
+        target_student_id_set = {s_id for (s_id,) in student_ids_in_class}
 
-    if not target_student_id_set:
-        return GradesCommentsResponse(lesson_id=lesson_id, comments=[])
+        if not target_student_id_set:
+            return GradesCommentsResponse(lesson_id=lesson_id, comments=[])
 
-    # ▲▲▲▲▲ 【Comments絞り込み修正】 ▲▲▲▲▲
-    
-    lesson_registrations = (
-        db.query(LessonRegistrationTable)
-        .filter(LessonRegistrationTable.lesson_id == lesson_id)
-        .all()
-    )
-    
-    if not lesson_registrations:
-        return GradesCommentsResponse(lesson_id=lesson_id, comments=[])
-    
-    comments = []
-    for registration in lesson_registrations:
-        surveys = (
-            db.query(LessonSurveyTable)
-            .filter(LessonSurveyTable.lesson_theme_id == registration.lesson_theme_id)
+        lesson_registrations = (
+            db.query(LessonRegistrationTable)
+            .filter(LessonRegistrationTable.lesson_id == lesson_id)
             .all()
         )
         
-        for survey in surveys:
-            # ▼▼▼▼▼ 【Comments絞り込み修正】 ▼▼▼▼▼
-            # 3. アンケートの student_id が、対象クラスの生徒ID (Set) に含まれているかチェック
-            if survey.student_comment and survey.student_id in target_student_id_set:
-            # ▲▲▲▲▲ 【Comments絞り込み修正】 ▲▲▲▲▲
-                
-                student = db.query(StudentTable).filter(
-                    StudentTable.student_id == survey.student_id
-                ).first()
-                
-                if student:
-                    comments.append(StudentComment(
-                        student_id=student.student_id,
-                        student_name=student.name, # student.name は NULL可だが、CommentスキーマはOK
-                        comment_text=survey.student_comment
-                    ))
-    
-    return GradesCommentsResponse(
-        lesson_id=lesson_id,
-        comments=comments
-    )
+        if not lesson_registrations:
+            return GradesCommentsResponse(lesson_id=lesson_id, comments=[])
+        
+        comments = []
+        for registration in lesson_registrations:
+            surveys = (
+                db.query(LessonSurveyTable)
+                .filter(LessonSurveyTable.lesson_theme_id == registration.lesson_theme_id)
+                .all()
+            )
+            
+            for survey in surveys:
+                # 3. アンケートの student_id が、対象クラスの生徒ID (Set) に含まれているかチェック
+                if survey.student_comment and survey.student_id in target_student_id_set:
+                    
+                    student = db.query(StudentTable).filter(
+                        StudentTable.student_id == survey.student_id
+                    ).first()
+                    
+                    if student:
+                        comments.append(StudentComment(
+                            student_id=student.student_id,
+                            student_name=student.name, 
+                            comment_text=survey.student_comment
+                        ))
+        
+        return GradesCommentsResponse(
+            lesson_id=lesson_id,
+            comments=comments
+        )
+
+    except Exception as e:
+        print(f"!!! /grades/comments エラー発生 !!!: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e}")
