@@ -160,6 +160,7 @@ class LessonSurveyTable(Base):
     
     lesson_survey_id = Column(Integer, primary_key=True, autoincrement=True)
     student_id = Column(Integer, ForeignKey("students_table.student_id"), nullable=False)
+    lesson_id = Column(Integer, ForeignKey("lessons_table.lesson_id"), nullable=True, default=None)
     lesson_theme_id = Column(Integer, ForeignKey("lesson_themes_table.lesson_theme_id"))
     survey_status = Column(Integer, ForeignKey("status_table.status_id"), nullable=False)
     understanding_level = Column(Integer)
@@ -167,6 +168,7 @@ class LessonSurveyTable(Base):
     student_comment = Column(String(255))
     
     student = relationship("StudentTable", back_populates="lesson_surveys")
+    lesson = relationship("LessonTable", back_populates="surveys")
     lesson_theme = relationship("LessonThemesTable", back_populates="lesson_surveys")
     status = relationship("StatusTable")
 
