@@ -61,6 +61,7 @@ class LessonTable(Base):
     status = relationship("StatusTable")
     registrations = relationship("LessonRegistrationTable", back_populates="lesson")
     lesson_answer_data = relationship("LessonAnswerDataTable", back_populates="lesson")
+    surveys = relationship("LessonSurveyTable", back_populates="lesson")
 
 class MaterialTable(Base):
     __tablename__ = "materials_table"
