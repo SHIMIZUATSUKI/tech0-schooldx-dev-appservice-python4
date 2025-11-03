@@ -21,18 +21,16 @@ def get_grades_raw_data(
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
-    # ▼▼▼▼▼ 【修正箇所】 ▼▼▼▼▼
     # JOINパスと Eager Loading を修正
     answer_data_list = (
         db.query(LessonAnswerDataTable)
-        # 1. 生徒情報をJOIN (変更なし)
+        # 1. 生徒情報をJOIN
         .join(StudentTable, LessonAnswerDataTable.student_id == StudentTable.student_id)
         
-        # 2. 問題情報をJOIN (変更なし)
+        # 2. 問題情報をJOIN
         .join(LessonQuestionsTable, LessonAnswerDataTable.lesson_question_id == LessonQuestionsTable.lesson_question_id)
         
         # 3. テーマ情報 -> ユニット情報をJOIN (LAD.lesson_theme_id を使用)
-        #    isouter=True (LEFT JOIN) にし、テーマやユニットがなくても回答データは取得できるようにする
         .join(LessonThemesTable, LessonAnswerDataTable.lesson_theme_id == LessonThemesTable.lesson_theme_id, isouter=True)
         .join(UnitTable, LessonThemesTable.units_id == UnitTable.units_id, isouter=True)
         
@@ -46,14 +44,12 @@ def get_grades_raw_data(
         )
         .all()
     )
-    # ▲▲▲▲▲ 【修正箇所】 ▲▲▲▲▲
     
     if not answer_data_list:
         return []
 
     result = []
     for ad in answer_data_list:
-        # ▼▼▼▼▼ 【修正箇所】 ▼▼▼▼▼
         # ad (LessonAnswerDataTable) から直接リレーションをたどる
         student = ad.student
         question = ad.lesson_question
@@ -61,7 +57,6 @@ def get_grades_raw_data(
         unit = theme.unit if theme else None
 
         # 回答データ(ad)、生徒(student)、問題(question) があれば最低限処理する
-        # (theme や unit は null でも可)
         if not student or not question:
             continue
         
@@ -86,7 +81,7 @@ def get_grades_raw_data(
             question=QuestionInfo(
                 question_id=question.lesson_question_id,
                 question_label=question.lesson_question_label or f"問{question.lesson_question_id}",
-                correct_choice=correct_choice or "B", # フロントエンドのロジック(80行目)に合わせる
+                correct_choice=correct_choice or "B", 
                 part_name=unit.part_name if unit else None,
                 chapter_name=unit.chapter_name if unit else None,
                 unit_name=unit.unit_name if unit else None,
@@ -99,7 +94,6 @@ def get_grades_raw_data(
                 end_unix=ad.answer_end_unix
             )
         ))
-        # ▲▲▲▲▲ 【修正箇所】 ▲▲▲▲▲
     
     return result
 
@@ -115,6 +109,25 @@ def get_grades_comments(
     lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
+
+    # ▼▼▼▼▼ 【修正箇所】 ▼▼▼▼▼
+    
+    # 1. この授業のクラスID (target_class_id) を取得
+    target_class_id = lesson.class_id
+    
+    # 2. そのクラスに所属する生徒のID一覧 (Set) を取得
+    student_ids_in_class = db.query(StudentTable.student_id).filter(
+        StudentTable.class_id == target_class_id
+    ).all()
+    
+    # [(1,), (2,)] のようなタプルのリストを {1, 2} のようなSetに変換
+    target_student_id_set = {s_id for (s_id,) in student_ids_in_class}
+
+    if not target_student_id_set:
+        # このクラスに生徒がいない
+        return GradesCommentsResponse(lesson_id=lesson_id, comments=[])
+
+    # ▲▲▲▲▲ 【修正箇所】 ▲▲▲▲▲
     
     lesson_registrations = (
         db.query(LessonRegistrationTable)
@@ -134,7 +147,12 @@ def get_grades_comments(
         )
         
         for survey in surveys:
-            if survey.student_comment:
+            # ▼▼▼▼▼ 【修正箇所】 ▼▼▼▼▼
+            # 3. アンケートの student_id が、対象クラスの生徒ID (Set) に含まれているかチェック
+            if survey.student_comment and survey.student_id in target_student_id_set:
+            # ▲▲▲▲▲ 【修正箇所】 ▲▲▲▲▲
+                
+                # (student_idがSetに含まれていることは確認済みなので、DBからstudent情報を引く)
                 student = db.query(StudentTable).filter(
                     StudentTable.student_id == survey.student_id
                 ).first()
