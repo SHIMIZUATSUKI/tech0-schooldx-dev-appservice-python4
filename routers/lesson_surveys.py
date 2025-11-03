@@ -75,6 +75,7 @@ def create_lesson_survey(
         # 新しいアンケートレコードを作成
         new_survey = LessonSurveyTable(
             student_id=student_id,
+            lesson_id=lesson_id,
             lesson_theme_id=lesson_theme_id,
             survey_status=1,  # デフォルトステータス（提出済み）
             understanding_level=understanding_level,
