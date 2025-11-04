@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Body, BackgroundTa
 from sqlalchemy.orm import Session
 from database import get_db
 from models import LessonAnswerDataTable
-from schemas import AnswerUpdateRequest, LessonAnswerDataResponse
+from schemas import LessonAnswerDataResponse,LessonAnswerUpdateRequest
 from datetime import datetime
 from socket_server import emit_to_web # ★ 2. emit_to_web ヘルパーをインポート
 
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/answers", tags=["answer_data"])
 async def update_answer_data_by_id( # ★ 3. async def に変更
     background_tasks: BackgroundTasks, # ★ 4. BackgroundTasks を依存関係として追加
     lesson_answer_data_id: int = Query(..., description="更新対象の answer_data_id"),
-    update: AnswerUpdateRequest = Body(...),
+    update: LessonAnswerUpdateRequest = Body(...),
     db: Session = Depends(get_db)
 ):
     # レコード取得
@@ -24,6 +24,9 @@ async def update_answer_data_by_id( # ★ 3. async def に変更
         raise HTTPException(status_code=404, detail="Answer data not found.")
 
     # nullの場合は更新スキップ（かつUNIX時刻自動算出対応）
+    if update.choice_number is not None:
+        record.choice_number = update.choice_number
+
     if update.answer_correctness is not None:
         record.answer_correctness = update.answer_correctness
 
