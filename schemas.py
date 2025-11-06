@@ -209,6 +209,7 @@ class QuestionInfo(BaseModel):
     chapter_name: Optional[str] = None
     unit_name: Optional[str] = None
     lesson_theme_name: Optional[str] = None
+    lesson_theme_contents_id: Optional[int] = None
 
 class AnswerInfo(BaseModel):
     selected_choice: Optional[str] = None
