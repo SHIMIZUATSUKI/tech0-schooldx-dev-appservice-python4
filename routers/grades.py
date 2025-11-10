@@ -84,7 +84,8 @@ def get_grades_raw_data(
                     part_name=unit.part_name if unit else None,
                     chapter_name=unit.chapter_name if unit else None,
                     unit_name=unit.unit_name if unit else None,
-                    lesson_theme_name=theme.lesson_theme_name if theme else None
+                    lesson_theme_name=theme.lesson_theme_name if theme else None,
+                    lesson_theme_contents_id=question.lesson_theme_contents_id
                 ),
                 answer=AnswerInfo(
                     selected_choice=selected_choice,
@@ -111,57 +112,31 @@ def get_grades_comments(
     指定した授業の全生徒のアンケートコメントを取得する。
     定性分析に使用する。
     """
-    
     try:
-        lesson = db.query(LessonTable).filter(LessonTable.lesson_id == lesson_id).first()
-        if not lesson:
-            raise HTTPException(status_code=404, detail="Lesson not found")
-
-        # 1. この授業のクラスID (target_class_id) を取得
-        target_class_id = lesson.class_id
-        
-        # 2. そのクラスに所属する生徒のID一覧 (Set) を取得
-        student_ids_in_class = db.query(StudentTable.student_id).filter(
-            StudentTable.class_id == target_class_id
-        ).all()
-        
-        target_student_id_set = {s_id for (s_id,) in student_ids_in_class}
-
-        if not target_student_id_set:
-            return GradesCommentsResponse(lesson_id=lesson_id, comments=[])
-
-        lesson_registrations = (
-            db.query(LessonRegistrationTable)
-            .filter(LessonRegistrationTable.lesson_id == lesson_id)
+        # LessonSurveyTable から lesson_id で直接絞り込み、StudentTable と結合して生徒名を取得
+        surveys = (
+            db.query(
+                LessonSurveyTable.student_id,
+                StudentTable.name,
+                LessonSurveyTable.student_comment
+            )
+            .join(StudentTable, LessonSurveyTable.student_id == StudentTable.student_id)
+            .filter(LessonSurveyTable.lesson_id == lesson_id)
+            .filter(LessonSurveyTable.student_comment.isnot(None)) # コメントがNULLでないもの
+            .filter(LessonSurveyTable.student_comment != '')      # コメントが空文字列でないもの
             .all()
         )
-        
-        if not lesson_registrations:
-            return GradesCommentsResponse(lesson_id=lesson_id, comments=[])
-        
-        comments = []
-        for registration in lesson_registrations:
-            surveys = (
-                db.query(LessonSurveyTable)
-                .filter(LessonSurveyTable.lesson_theme_id == registration.lesson_theme_id)
-                .all()
+
+        # 取得した結果をPydanticモデルに変換
+        comments = [
+            StudentComment(
+                student_id=student_id,
+                student_name=student_name,
+                comment_text=comment_text
             )
-            
-            for survey in surveys:
-                # 3. アンケートの student_id が、対象クラスの生徒ID (Set) に含まれているかチェック
-                if survey.student_comment and survey.student_id in target_student_id_set:
-                    
-                    student = db.query(StudentTable).filter(
-                        StudentTable.student_id == survey.student_id
-                    ).first()
-                    
-                    if student:
-                        comments.append(StudentComment(
-                            student_id=student.student_id,
-                            student_name=student.name, 
-                            comment_text=survey.student_comment
-                        ))
-        
+            for student_id, student_name, comment_text in surveys
+        ]
+
         return GradesCommentsResponse(
             lesson_id=lesson_id,
             comments=comments

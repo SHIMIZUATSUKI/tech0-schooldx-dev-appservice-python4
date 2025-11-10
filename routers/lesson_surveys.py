@@ -6,11 +6,65 @@ from database import get_db
 from models import LessonSurveyTable, StudentTable, LessonTable, LessonThemesTable
 from schemas import LessonSurveyCreate, LessonSurveyResponse
 from typing import List, Optional
+from sqlalchemy import func
+from pydantic import BaseModel
+from typing import Dict
 
 router = APIRouter(
     prefix="/lesson_surveys",
     tags=["lesson_surveys"]
 )
+
+class LessonSurveySummaryResponse(BaseModel):
+    understanding_level_distribution: Dict[int, int]
+    difficulty_point_distribution: Dict[int, int]
+
+@router.get("/lesson/{lesson_id}/summary", response_model=LessonSurveySummaryResponse)
+def get_lesson_survey_summary(
+    lesson_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    特定の授業のアンケート結果の集計を取得するエンドポイント
+
+    パスパラメータ:
+    - lesson_id (int): 授業ID
+    """
+    try:
+        # understanding_levelの集計
+        understanding_level_dist = db.query(
+            LessonSurveyTable.understanding_level,
+            func.count(LessonSurveyTable.understanding_level)
+        ).filter(
+            LessonSurveyTable.lesson_id == lesson_id,
+            LessonSurveyTable.understanding_level.isnot(None)
+        ).group_by(
+            LessonSurveyTable.understanding_level
+        ).all()
+
+        # difficulty_pointの集計
+        difficulty_point_dist = db.query(
+            LessonSurveyTable.difficulty_point,
+            func.count(LessonSurveyTable.difficulty_point)
+        ).filter(
+            LessonSurveyTable.lesson_id == lesson_id,
+            LessonSurveyTable.difficulty_point.isnot(None)
+        ).group_by(
+            LessonSurveyTable.difficulty_point
+        ).all()
+
+        summary = {
+            "understanding_level_distribution": {level: count for level, count in understanding_level_dist},
+            "difficulty_point_distribution": {point: count for point, count in difficulty_point_dist}
+        }
+
+        return summary
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"内部エラーが発生しました: {str(e)}"
+        )
 
 @router.post("/", response_model=LessonSurveyResponse, status_code=status.HTTP_201_CREATED)
 def create_lesson_survey(
