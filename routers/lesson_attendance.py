@@ -5,12 +5,13 @@ from database import get_db
 from models import (
     LessonTable, TimetableTable, LessonRegistrationTable,
     LessonThemesTable, UnitTable, MaterialTable, AttendanceTable,
-    ClassTable
+    ClassTable,LessonThemeContentsTable
 )
 from schemas import LessonCalendarResponse, LessonInformationResponse, AttendanceCreate, LessonThemeBlock
 from typing import List
-import asyncio
-from sqlalchemy.exc import IntegrityError
+# import asyncio
+# from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 
 router = APIRouter(
     prefix="/lesson_attendance",
@@ -82,13 +83,15 @@ def get_lesson_information(lesson_id: int = Query(...), db: Session = Depends(ge
             UnitTable.chapter_name,
             UnitTable.unit_name,
             MaterialTable.material_id,
-            MaterialTable.material_name
+            MaterialTable.material_name,
+            LessonThemeContentsTable.lesson_question_status,
         )
         .join(TimetableTable, LessonTable.timetable_id == TimetableTable.timetable_id)
         .join(LessonRegistrationTable, LessonTable.lesson_id == LessonRegistrationTable.lesson_id)
         .join(LessonThemesTable, LessonRegistrationTable.lesson_theme_id == LessonThemesTable.lesson_theme_id)
         .join(UnitTable, LessonThemesTable.units_id == UnitTable.units_id)
         .join(MaterialTable, UnitTable.material_id == MaterialTable.material_id)
+        .join(LessonThemeContentsTable, LessonThemesTable.lesson_theme_contents_id == LessonThemeContentsTable.lesson_theme_contents_id)  # 20251110追加
         .filter(LessonTable.lesson_id == lesson_id)
         .all()
     )
@@ -111,6 +114,7 @@ def get_lesson_information(lesson_id: int = Query(...), db: Session = Depends(ge
         lesson_theme_list.append(LessonThemeBlock(
             lesson_registration_id=row[8],
             lesson_theme_id=row[9],
+            lesson_question_status=row[17],         # 20251110追加
             lecture_video_id=0,
             textbook_id=0,
             document_id=0,

@@ -154,6 +154,7 @@ class LessonCalendarResponse(BaseModel):
 class LessonThemeBlock(BaseModel):
     lesson_registration_id: int
     lesson_theme_id: int
+    lesson_question_status: int                             # 20251110 追加
     lecture_video_id: int
     textbook_id: int
     document_id: int
