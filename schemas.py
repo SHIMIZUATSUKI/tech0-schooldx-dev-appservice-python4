@@ -312,14 +312,6 @@ class AnswerDataWithDetails(BaseModel):
     class Config:
         from_attributes = True
 
-# class AnswerUpdateRequest(BaseModel):
-#     answer_correctness: Optional[int] = None
-#     answer_status: Optional[int] = None
-#     answer_start_timestamp: Optional[datetime] = None
-#     answer_start_unix: Optional[int] = None
-#     answer_end_timestamp: Optional[datetime] = None
-#     answer_end_unix: Optional[int] = None
-
 class AnswerDataRealtimeResponse(BaseModel):
     answer_data_id: int
     student_id: int

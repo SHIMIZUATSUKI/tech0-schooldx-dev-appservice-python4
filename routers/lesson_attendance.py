@@ -9,8 +9,6 @@ from models import (
 )
 from schemas import LessonCalendarResponse, LessonInformationResponse, AttendanceCreate, LessonThemeBlock
 from typing import List
-# import asyncio
-# from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 
 router = APIRouter(
