@@ -51,7 +51,7 @@ def create_sio_app(cors_origins: list[str]):
     @sio.event
     async def connect(sid, environ):
         print(f"[connect] {sid}")
-        print("HTTP_ORIGIN  =", environ.get("HTTP_ORIGIN"))        
+        # print("HTTP_ORIGIN  =", environ.get("HTTP_ORIGIN"))        
 
     @sio.event
     async def disconnect(sid):

@@ -82,7 +82,8 @@ def get_lesson_information(lesson_id: int = Query(...), db: Session = Depends(ge
             UnitTable.unit_name,
             MaterialTable.material_id,
             MaterialTable.material_name,
-            LessonThemeContentsTable.lesson_question_status,
+            # LessonThemeContentsTable.lesson_question_status,
+            LessonRegistrationTable.lesson_question_status  # 20251126 テーブルを変更
         )
         .join(TimetableTable, LessonTable.timetable_id == TimetableTable.timetable_id)
         .join(LessonRegistrationTable, LessonTable.lesson_id == LessonRegistrationTable.lesson_id)

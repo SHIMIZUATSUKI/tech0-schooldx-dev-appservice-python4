@@ -111,6 +111,7 @@ class LessonRegistrationCreate(BaseModel):
 class LessonRegistrationResponse(BaseModel):
     lesson_id: int
     lesson_registration_id: int
+    lesson_question_status: int                     # 20251126追加
 
 class LessonRegistrationCalendarResponse(BaseModel):
     timetable_id: int

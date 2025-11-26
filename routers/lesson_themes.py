@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models import LessonThemeContentsTable, LessonThemesTable
+from models import LessonThemeContentsTable, LessonThemesTable, LessonRegistrationTable
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/lesson_themes", tags=["lesson_themes"])
@@ -19,13 +19,18 @@ async def start_exercise(
     - lesson_question_statusを2(進行中)に更新
     """
     # テーマに紐づくlesson_theme_contentsを取得
+    # content = (
+    #     db.query(LessonThemeContentsTable)
+    #     .join(LessonThemesTable)
+    #     .filter(LessonThemesTable.lesson_theme_id == lesson_theme_id)
+    #     .first()
+    # )
     content = (
-        db.query(LessonThemeContentsTable)
+        db.query(LessonRegistrationTable)
         .join(LessonThemesTable)
         .filter(LessonThemesTable.lesson_theme_id == lesson_theme_id)
         .first()
     )
-    
     if not content:
         raise HTTPException(
             status_code=404, 
@@ -48,13 +53,18 @@ async def end_exercise(
     - lesson_question_statusを3(終了)に更新
     """
     # テーマに紐づくlesson_theme_contentsを取得
+    # content = (
+    #     db.query(LessonThemeContentsTable)
+    #     .join(LessonThemesTable)
+    #     .filter(LessonThemesTable.lesson_theme_id == lesson_theme_id)
+    #     .first()
+    # )
     content = (
-        db.query(LessonThemeContentsTable)
+        db.query(LessonRegistrationTable)
         .join(LessonThemesTable)
         .filter(LessonThemesTable.lesson_theme_id == lesson_theme_id)
         .first()
-    )
-    
+    )    
     if not content:
         raise HTTPException(
             status_code=404, 

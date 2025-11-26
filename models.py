@@ -87,11 +87,11 @@ class LessonThemeContentsTable(Base):
     __tablename__ = "lesson_theme_contents_table"
     
     lesson_theme_contents_id = Column(Integer, primary_key=True, autoincrement=True)
-    lesson_question_status = Column(Integer, ForeignKey("status_table.status_id"), nullable=False)
-    lesson_survey_id = Column(Integer, ForeignKey("lesson_survey_table.lesson_survey_id"), nullable=False)
+    # lesson_question_status = Column(Integer, ForeignKey("status_table.status_id"), nullable=False)
+    # lesson_survey_id = Column(Integer, ForeignKey("lesson_survey_table.lesson_survey_id"), nullable=False)
     
-    status = relationship("StatusTable")
-    lesson_survey = relationship("LessonSurveyTable")
+    # status = relationship("StatusTable")
+    # lesson_survey = relationship("LessonSurveyTable")
     lesson_questions = relationship("LessonQuestionsTable", back_populates="lesson_theme_contents")
     lesson_themes = relationship("LessonThemesTable", back_populates="lesson_theme_contents")
 
@@ -115,9 +115,12 @@ class LessonRegistrationTable(Base):
     lesson_registration_id = Column(Integer, primary_key=True, autoincrement=True)
     lesson_id = Column(Integer, ForeignKey("lessons_table.lesson_id"), nullable=False)
     lesson_theme_id = Column(Integer, ForeignKey("lesson_themes_table.lesson_theme_id"), nullable=False)
+    lesson_question_status = Column(Integer, ForeignKey("status_table.status_id"), nullable=False)          # 20251126修正
+
     
     lesson = relationship("LessonTable", back_populates="registrations")
     lesson_theme = relationship("LessonThemesTable", back_populates="registrations")
+    status = relationship("StatusTable")                                                                    # 20251126修正  
 
 class LessonQuestionsTable(Base):
     __tablename__ = "lesson_questions_table"
