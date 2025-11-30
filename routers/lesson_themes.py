@@ -31,7 +31,7 @@ async def start_exercise(
     if not content:
         raise HTTPException(
             status_code=404, 
-            detail=f"Theme content not found for lesson_theme_id: {lesson_theme_id}"
+            detail=f"No registration record found for lesson_id={lesson_id} and lesson_theme_id={lesson_theme_id}."
         )
     
     # ステータスを進行中(2)に更新
@@ -62,7 +62,7 @@ async def end_exercise(
     if not content:
         raise HTTPException(
             status_code=404, 
-            detail=f"Theme content not found for lesson_theme_id: {lesson_theme_id}"
+            detail=f"No registration record found for lesson_id={lesson_id} and lesson_theme_id={lesson_theme_id}."
         )
     
     # ステータスを終了(3)に更新
