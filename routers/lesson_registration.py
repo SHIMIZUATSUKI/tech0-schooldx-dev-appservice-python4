@@ -123,7 +123,8 @@ def register_lesson(
         for theme_id in lesson_data.lesson_theme_ids:
             registration = LessonRegistrationTable(
                 lesson_id=new_lesson.lesson_id,
-                lesson_theme_id=theme_id
+                lesson_theme_id=theme_id,
+                lesson_question_status=1  # NOT_STARTED
             )
             db.add(registration)
             registrations.append(registration)

@@ -90,7 +90,7 @@ def get_lesson_information(lesson_id: int = Query(...), db: Session = Depends(ge
         .join(LessonThemesTable, LessonRegistrationTable.lesson_theme_id == LessonThemesTable.lesson_theme_id)
         .join(UnitTable, LessonThemesTable.units_id == UnitTable.units_id)
         .join(MaterialTable, UnitTable.material_id == MaterialTable.material_id)
-        .join(LessonThemeContentsTable, LessonThemesTable.lesson_theme_contents_id == LessonThemeContentsTable.lesson_theme_contents_id)  # 20251110追加
+        # .join(LessonThemeContentsTable, LessonThemesTable.lesson_theme_contents_id == LessonThemeContentsTable.lesson_theme_contents_id)  # 20251110追加→再削除
         .filter(LessonTable.lesson_id == lesson_id)
         .all()
     )
