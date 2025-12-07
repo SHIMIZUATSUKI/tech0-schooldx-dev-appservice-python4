@@ -101,8 +101,8 @@ def get_lesson_information(lesson_id: int = Query(...), db: Session = Depends(ge
     common_fields = dict(zip([
         "class_id", "timetable_id", "lesson_name", "lesson_status",
         "date", "day_of_week", "period", "time"
-    ], [query_results[0][0], query_results[0][1], query_results[0][2],
-        bool(query_results[0][3] == 2 or query_results[0][3] == 3) if query_results[0][3] else False,
+    ], [query_results[0][0], query_results[0][1], query_results[0][2],query_results[0][3],
+        # bool(query_results[0][3] == 2 or query_results[0][3] == 3) if query_results[0][3] else False,
         query_results[0][4], query_results[0][5], query_results[0][6], query_results[0][7]]))
     
     # delivery_statusは仮の値

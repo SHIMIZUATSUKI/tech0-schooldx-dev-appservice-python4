@@ -175,7 +175,8 @@ class LessonInformationResponse(BaseModel):
     timetable_id: int
     lesson_name: Optional[str] = None
     delivery_status: Optional[bool] = False
-    lesson_status: Optional[bool] = False
+    # lesson_status: Optional[bool] = False
+    lesson_status: int
     date: date
     day_of_week: str
     period: int
