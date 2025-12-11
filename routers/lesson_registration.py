@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
-from models import MaterialTable, UnitTable, LessonThemesTable, TimetableTable, LessonTable, LessonRegistrationTable, ClassTable
+from models import MaterialTable, UnitTable, LessonThemesTable, TimetableTable, LessonTable, LessonRegistrationTable, ClassTable, LessonQuestionsTable, LessonThemeContentsTable
 from schemas import (
     MaterialWithUnits, UnitWithThemes, LessonThemeBase, 
     TimetableCreate, TimetableResponse,
@@ -106,6 +106,37 @@ def register_lesson(
     """
     try:
         logger.info(f"授業登録リクエスト: {lesson_data}")
+        
+        # ★対策2: lesson_theme_ids の重複チェック
+        theme_ids = lesson_data.lesson_theme_ids
+        if len(theme_ids) != len(set(theme_ids)):
+            logger.warning(f"重複するテーマIDが検出されました: {theme_ids}")
+            raise HTTPException(
+                status_code=400, 
+                detail="同じ授業テーマが複数回指定されています。重複を解消してください。"
+            )
+        
+        # ★対策3: 問題IDの重複チェック（異なるテーマ間）
+        all_question_ids = []
+        for theme_id in theme_ids:
+            questions = (
+                db.query(LessonQuestionsTable.lesson_question_id)
+                .join(LessonThemeContentsTable)
+                .join(LessonThemesTable)
+                .filter(LessonThemesTable.lesson_theme_id == theme_id)
+                .all()
+            )
+            question_ids = [q.lesson_question_id for q in questions]
+            
+            # 既に登録予定の問題IDと重複がないかチェック
+            overlap = set(all_question_ids) & set(question_ids)
+            if overlap:
+                logger.warning(f"異なるテーマ間で同じ問題IDが共有されています: {list(overlap)}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"選択されたテーマ間で同じ問題(ID: {list(overlap)})が共有されています。異なるテーマを選択してください。"
+                )
+            all_question_ids.extend(question_ids)
         
         # lesson_table に新規授業を登録
         new_lesson = LessonTable(
