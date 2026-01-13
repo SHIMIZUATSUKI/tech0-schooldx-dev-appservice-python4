@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, DateTime, Text, Float, BigInteger
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, DateTime, Text, Float, BigInteger,text
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -196,6 +196,27 @@ class AttendanceTable(Base):
     
     student = relationship("StudentTable")
     lesson = relationship("LessonTable")
+
+
+# ログイン履歴ログテーブル
+class LoginHistoryTable(Base):
+    __tablename__ = "login_history"
+
+    login_history_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    occurred_at = Column(
+        DateTime,
+        nullable=False,
+        server_default=text("UTC_TIMESTAMP(6)")
+    )
+    mail_address = Column(String(255), nullable=True)
+    firebase_uid = Column(String(128), nullable=True)
+    student_id = Column(Integer, nullable=True)
+
+    token_valid = Column(Boolean, nullable=False)
+    is_whitelisted = Column(Boolean, nullable=False)
+    result = Column(String(16), nullable=False)     # SUCCESS / REJECTED / ERROR
+    reason_code = Column(String(64), nullable=True) # NOT_REGISTERED / INVALID_TOKEN 等
+    http_status = Column(Integer, nullable=True)
 
 
 
