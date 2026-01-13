@@ -13,7 +13,8 @@ if SSL_CERT_PATH and os.path.exists(SSL_CERT_PATH):
     ssl_args = {"ssl_ca": SSL_CERT_PATH}
 
 DB_URI = (
-    f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+    # f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
     f"?charset=utf8mb4"
 )
 
