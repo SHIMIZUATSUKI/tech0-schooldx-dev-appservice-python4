@@ -70,3 +70,38 @@ async def end_exercise(
     db.commit()
     
     return ExerciseStatusResponse(message="Exercise ended")
+
+
+class QuestionCountResponse(BaseModel):
+    lesson_theme_id: int
+    question_count: int
+    question_ids: list[int]
+
+
+@router.get("/{lesson_theme_id}/questions/count", response_model=QuestionCountResponse)
+async def get_question_count(
+    lesson_theme_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    テーマに紐づく問題数を取得
+    """
+    from models import LessonQuestionsTable, LessonThemeContentsTable
+    
+    # テーマに紐づく問題を取得
+    questions = (
+        db.query(LessonQuestionsTable)
+        .join(LessonThemeContentsTable)
+        .join(LessonThemesTable)
+        .filter(LessonThemesTable.lesson_theme_id == lesson_theme_id)
+        .order_by(LessonQuestionsTable.lesson_question_id)
+        .all()
+    )
+    
+    question_ids = [q.lesson_question_id for q in questions]
+    
+    return QuestionCountResponse(
+        lesson_theme_id=lesson_theme_id,
+        question_count=len(questions),
+        question_ids=question_ids
+    )

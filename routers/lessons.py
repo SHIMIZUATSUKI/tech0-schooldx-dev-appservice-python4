@@ -133,8 +133,8 @@ async def start_lesson(
     for theme_id, question_id in theme_questions_query:
         if theme_id not in theme_to_questions:
             theme_to_questions[theme_id] = []
-        # 最大4問まで
-        if len(theme_to_questions[theme_id]) < 4:
+        # 最大16問まで（動的問題数対応）
+        if len(theme_to_questions[theme_id]) < 16:
             theme_to_questions[theme_id].append(question_id)
 
     # ========================================
