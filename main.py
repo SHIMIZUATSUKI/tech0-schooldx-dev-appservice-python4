@@ -33,7 +33,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
-    # allow_credentials=False,    
+    # allow_credentials=False, 
+    expose_headers=["Server-Timing", "X-Request-Id"],
 )
 
 # --- Socket.IOの結合方法を修正 ---
