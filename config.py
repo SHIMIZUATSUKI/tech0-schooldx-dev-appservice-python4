@@ -2,6 +2,7 @@
 
 import os
 from dotenv import load_dotenv
+from urllib.parse import quote
 
 load_dotenv()  # .env を読み込み
 
@@ -29,3 +30,34 @@ else:
     ALLOWED_ORIGINS = []
 
 print("Allowed Origins:", ALLOWED_ORIGINS)
+
+# Redis設定
+def build_redis_url() -> str:
+    """
+    .env から Redis 接続情報を読み取り、python-socketio 用の REDIS_URL を組み立てる。
+    Azure Managed Redis の場合:
+      - TLS 必須 -> rediss://
+      - ポート 10000
+    """
+    host = os.getenv("REDIS_HOST")
+    password = os.getenv("REDIS_PASSWORD")
+
+    if not host:
+        raise RuntimeError("REDIS_HOST is not set in environment/.env")
+    if not password:
+        raise RuntimeError("REDIS_PASSWORD is not set in environment/.env")
+
+    port = os.getenv("REDIS_PORT", "10000")
+    db = os.getenv("REDIS_DB", "0")
+    ssl = os.getenv("REDIS_SSL", "true").lower() == "true"
+
+    scheme = "rediss" if ssl else "redis"
+
+    # パスワードに記号が含まれても壊れないよう URL エンコード
+    pw = quote(password, safe="")
+
+    return f"{scheme}://:{pw}@{host}:{port}/{db}"
+
+
+REDIS_URL = build_redis_url()
+REDIS_CHANNEL = os.getenv("REDIS_CHANNEL", "sio")

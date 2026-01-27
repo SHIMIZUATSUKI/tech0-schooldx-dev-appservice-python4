@@ -1,13 +1,38 @@
 import socketio
-import asyncio
+# import asyncio
+import os
+from datetime import datetime
+
+
+from config import REDIS_URL, REDIS_CHANNEL
+
+
+# Redis を Socket.IO の Client Manager として利用（Workers 複数での共有に必須）
+mgr = socketio.AsyncRedisManager(
+    REDIS_URL,
+    write_only=False,
+    channel=REDIS_CHANNEL,
+)
 
 # ★ sio インスタンスをモジュールレベルで定義
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins=["*"], # create_sio_app で上書きされます
-    logger=True, 
-    engineio_logger=True
+    cors_allowed_origins=["*"],  # create_sio_app で上書き
+    logger=False,               # ログ出力の停止
+    engineio_logger=False,     # ログ出力の停止
+    client_manager=mgr,         # ★これが肝
+    ping_interval=25,           # 任意：切断検知/維持を安定化
+    ping_timeout=60,
 )
+
+
+# # ★ sio インスタンスをモジュールレベルで定義
+# sio = socketio.AsyncServer(
+#     async_mode="asgi",
+#     cors_allowed_origins=["*"], # create_sio_app で上書きされます
+#     logger=True, 
+#     engineio_logger=True
+# )
 
 # ★ sio_app もここで定義
 sio_app = socketio.ASGIApp(sio)
@@ -19,12 +44,12 @@ async def emit_to_web(event_name: str, data: any):
     (PUT/POSTリクエストハンドラ内から呼び出す用)
     """
     try:
-        # 'from_flutter' イベントとしてブロードキャスト
-        print(f"Emitting event '{event_name}' with data: {data}")
+        pid = os.getpid()
+        print(f"[emit] pid={pid} event={event_name} data={data}")
         await sio.emit(event_name, data)
-        print(f"Successfully emitted '{event_name}'")
+        print(f"[emit] pid={pid} OK")
     except Exception as e:
-        print(f"Error emitting socket event: {e}")
+        print(f"[emit] pid={os.getpid()} ERROR: {e}")
 
 
 def create_sio_app(cors_origins: list[str]):
@@ -59,3 +84,28 @@ def create_sio_app(cors_origins: list[str]):
 
     # ★ sio_app インスタンスを返す
     return sio_app
+
+
+# ログ出力用
+@sio.event
+async def connect(sid, environ, auth=None):
+    pid = os.getpid()
+    now = datetime.utcnow().isoformat()
+
+    host = environ.get("HTTP_HOST")
+    origin = environ.get("HTTP_ORIGIN")
+    remote_addr = environ.get("REMOTE_ADDR")
+    xff = environ.get("HTTP_X_FORWARDED_FOR")
+    proto = environ.get("HTTP_X_FORWARDED_PROTO")
+
+    # Engine.IO の query（transport など）
+    query = environ.get("QUERY_STRING")
+
+    print(
+        f"[connect] utc={now} pid={pid} sid={sid} "
+        f"host={host} origin={origin} remote={remote_addr} xff={xff} proto={proto} query={query}"
+    )
+
+@sio.event
+async def disconnect(sid):
+    print(f"[disconnect] pid={os.getpid()} sid={sid}")
